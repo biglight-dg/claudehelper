@@ -1,0 +1,16 @@
+{
+  "hooks": {
+    "SessionStart": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "powershell -NoProfile -File \"C:\\Users\\chris\\claudehelper\\scripts\\handoff_hook.ps1\"",
+            "shell": "powershell",
+            "statusMessage": "핸드오프 문서 로딩 중..."
+          }
+        ]
+      }
+    ]
+  }
+}

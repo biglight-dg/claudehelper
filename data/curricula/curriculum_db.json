@@ -1,0 +1,34 @@
+{
+  "curricula": [
+    {
+      "id": "cur_20260612_203936",
+      "title": "이미지/동영상 제작 기초",
+      "path": "C:\\Users\\chris\\claudehelper\\data\\curricula\\이미지_동영상 제작 기초.json"
+    },
+    {
+      "id": "cur_20260612_211500",
+      "title": "AI 업무 기초",
+      "path": "C:\\Users\\chris\\claudehelper\\data\\curricula\\AI 업무 기초.json"
+    },
+    {
+      "id": "cur_20260613_100001",
+      "title": "AI 멋지게 사용하기",
+      "path": "C:\\Users\\chris\\claudehelper\\data\\curricula\\AI 멋지게 사용하기.json"
+    },
+    {
+      "id": "cur_20260613_100004",
+      "title": "개발 배경 지식",
+      "path": "C:\\Users\\chris\\claudehelper\\data\\curricula\\개발 배경 지식.json"
+    },
+    {
+      "id": "cur_20260613_100010",
+      "title": "AI 안전 저작권 보안",
+      "path": "C:\\Users\\chris\\claudehelper\\data\\curricula\\AI 안전 저작권 보안.json"
+    },
+    {
+      "id": "cur_20260613_100013",
+      "title": "AI 업무 자동화 실전",
+      "path": "C:\\Users\\chris\\claudehelper\\data\\curricula\\AI 업무 자동화 실전.json"
+    }
+  ]
+}

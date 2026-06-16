@@ -1,0 +1,446 @@
+{
+  "items": [
+    {
+      "title": "ChatGPT vs Gemini vs Claude 비교 가이드",
+      "path": "data/knowledge/20260611_ChatGPT_vs_Gemini_vs_Claude_비교_가이드.md",
+      "tags": [
+        "AI비교",
+        "ChatGPT",
+        "Gemini",
+        "Claude",
+        "입문"
+      ],
+      "created_at": "2026-06-11T21:50:00"
+    },
+    {
+      "title": "AI 이미지 생성 기초 — 프롬프트 정석 & 캐릭터 세계관",
+      "path": "C:\\Users\\chris\\claudehelper\\data\\knowledge\\20260612_203611_AI 이미지 생성 기초 _ 프롬프트 정석 _ 캐릭터 세계관.md",
+      "tags": [
+        "이미지생성",
+        "프롬프트",
+        "Flow",
+        "Gemini",
+        "믹스보드",
+        "입문",
+        "캐릭터"
+      ],
+      "created_at": "2026-06-12T20:36:11.500464"
+    },
+    {
+      "title": "AI 영상 제작 기초 — Image-to-Video 워크플로우 & Kling AI",
+      "path": "C:\\Users\\chris\\claudehelper\\data\\knowledge\\20260612_203844_AI 영상 제작 기초 _ Image-to-Video 워크플로우 _ Kli.md",
+      "tags": [
+        "영상제작",
+        "KlingAI",
+        "Image-to-Video",
+        "프롬프트",
+        "CapCut",
+        "입문",
+        "GoogleFlow"
+      ],
+      "created_at": "2026-06-12T20:38:44.072375"
+    },
+    {
+      "title": "AI 도구 지형도 — 실무자가 알아야 할 큰 그림",
+      "path": "data/knowledge/20260612_AI도구 지형도.md",
+      "tags": [
+        "AI기초",
+        "도구비교",
+        "에이전트",
+        "입문",
+        "실무자"
+      ],
+      "created_at": "2026-06-12T21:10:00"
+    },
+    {
+      "title": "마크다운(.md)과 파일 기초",
+      "path": "data/knowledge/20260612_마크다운과 파일 기초.md",
+      "tags": [
+        "마크다운",
+        "파일",
+        "기초",
+        "입문",
+        "실무자"
+      ],
+      "created_at": "2026-06-12T21:11:00"
+    },
+    {
+      "title": "터미널 쉽게 이해하기",
+      "path": "data/knowledge/20260612_터미널 쉽게 이해하기.md",
+      "tags": [
+        "터미널",
+        "CLI",
+        "기초",
+        "ClaudeCode",
+        "입문"
+      ],
+      "created_at": "2026-06-12T21:12:00"
+    },
+    {
+      "title": "Claude Code와 Claude Cowork 입문",
+      "path": "data/knowledge/20260612_Claude Code와 Cowork 입문.md",
+      "tags": [
+        "ClaudeCode",
+        "Cowork",
+        "에이전트",
+        "자동화",
+        "입문"
+      ],
+      "created_at": "2026-06-12T21:13:00"
+    },
+    {
+      "title": "커스텀 AI 비교 — GPTs·Gem·Cowork·Skill",
+      "path": "data/knowledge/20260612_커스텀 AI 비교 GPTs Gem Cowork Skill.md",
+      "tags": [
+        "GPTs",
+        "Gem",
+        "Skill",
+        "Agent",
+        "커스텀AI",
+        "비교"
+      ],
+      "created_at": "2026-06-12T21:14:00"
+    },
+    {
+      "title": "Agent와 Hook 개념 잡기",
+      "path": "data/knowledge/20260612_Agent와 Hook 개념 잡기.md",
+      "tags": [
+        "Agent",
+        "Hook",
+        "자동화",
+        "ClaudeCode",
+        "개념"
+      ],
+      "created_at": "2026-06-12T21:15:00"
+    },
+    {
+      "title": "프롬프트 잘 쓰는 법",
+      "path": "data/knowledge/20260612_프롬프트 잘 쓰는 법.md",
+      "tags": [
+        "프롬프트",
+        "스킬",
+        "입문",
+        "실무자"
+      ],
+      "created_at": "2026-06-12T21:20:00"
+    },
+    {
+      "title": "업무 문서 마크다운 작성법",
+      "path": "data/knowledge/20260612_업무 문서 마크다운 작성법.md",
+      "tags": [
+        "마크다운",
+        "업무문서",
+        "템플릿",
+        "실무자"
+      ],
+      "created_at": "2026-06-12T21:21:00"
+    },
+    {
+      "title": "토큰과 컨텍스트 아끼기",
+      "path": "data/knowledge/20260612_토큰과 컨텍스트 아끼기.md",
+      "tags": [
+        "토큰",
+        "컨텍스트",
+        "비용절약",
+        "스킬"
+      ],
+      "created_at": "2026-06-12T21:22:00"
+    },
+    {
+      "title": "클라이언트와 서버 — 인터넷은 어떻게 동작하나",
+      "path": "data/knowledge/20260612_클라이언트와 서버.md",
+      "tags": [
+        "서버",
+        "클라이언트",
+        "네트워크",
+        "개발기초"
+      ],
+      "created_at": "2026-06-12T21:30:00"
+    },
+    {
+      "title": "API와 REST API",
+      "path": "data/knowledge/20260612_API와 REST API.md",
+      "tags": [
+        "API",
+        "REST",
+        "JSON",
+        "개발기초"
+      ],
+      "created_at": "2026-06-12T21:31:00"
+    },
+    {
+      "title": "HTML·CSS·JavaScript — 웹의 3요소",
+      "path": "data/knowledge/20260612_HTML CSS 웹의 구조.md",
+      "tags": [
+        "HTML",
+        "CSS",
+        "JavaScript",
+        "웹",
+        "개발기초"
+      ],
+      "created_at": "2026-06-12T21:32:00"
+    },
+    {
+      "title": "프로그래밍 언어 둘러보기 — Python·Java·JavaScript",
+      "path": "data/knowledge/20260612_프로그래밍 언어 둘러보기.md",
+      "tags": [
+        "Python",
+        "Java",
+        "JavaScript",
+        "Node",
+        "개발기초"
+      ],
+      "created_at": "2026-06-12T21:33:00"
+    },
+    {
+      "title": "Git과 GitHub 입문",
+      "path": "data/knowledge/20260612_Git과 GitHub 입문.md",
+      "tags": [
+        "Git",
+        "GitHub",
+        "버전관리",
+        "협업",
+        "개발기초"
+      ],
+      "created_at": "2026-06-12T21:34:00"
+    },
+    {
+      "title": "비개발자 개발 용어 사전",
+      "path": "data/knowledge/20260612_비개발자 개발 용어 사전.md",
+      "tags": [
+        "용어사전",
+        "개발기초",
+        "레퍼런스",
+        "실무자"
+      ],
+      "created_at": "2026-06-12T21:35:00"
+    },
+    {
+      "title": "AI 환각(Hallucination)과 사실 검증",
+      "path": "data/knowledge/20260612_환각과 사실 검증.md",
+      "tags": [
+        "환각",
+        "사실검증",
+        "안전",
+        "신뢰성"
+      ],
+      "created_at": "2026-06-12T21:40:00"
+    },
+    {
+      "title": "AI 저작권과 개인정보",
+      "path": "data/knowledge/20260612_AI 저작권과 개인정보.md",
+      "tags": [
+        "저작권",
+        "개인정보",
+        "안전",
+        "법무"
+      ],
+      "created_at": "2026-06-12T21:41:00"
+    },
+    {
+      "title": "회사에서 AI 안전하게 쓰기",
+      "path": "data/knowledge/20260612_회사에서 AI 안전하게 쓰기.md",
+      "tags": [
+        "보안",
+        "사내정책",
+        "안전",
+        "실무자"
+      ],
+      "created_at": "2026-06-12T21:42:00"
+    },
+    {
+      "title": "업무 자동화 사고법",
+      "path": "data/knowledge/20260612_업무 자동화 사고법.md",
+      "tags": [
+        "자동화",
+        "업무개선",
+        "사고법",
+        "실무자"
+      ],
+      "created_at": "2026-06-12T21:50:00"
+    },
+    {
+      "title": "MCP로 도구 연결하기",
+      "path": "data/knowledge/20260612_MCP로 도구 연결하기.md",
+      "tags": [
+        "MCP",
+        "도구연결",
+        "자동화",
+        "에이전트"
+      ],
+      "created_at": "2026-06-12T21:51:00"
+    },
+    {
+      "title": "노코드 자동화 워크플로",
+      "path": "data/knowledge/20260612_노코드 자동화 워크플로.md",
+      "tags": [
+        "노코드",
+        "자동화",
+        "워크플로",
+        "Zapier"
+      ],
+      "created_at": "2026-06-12T21:52:00"
+    },
+    {
+      "title": "자동화용 Agent 설계",
+      "path": "data/knowledge/20260612_자동화용 Agent 설계.md",
+      "tags": [
+        "Agent",
+        "설계",
+        "자동화",
+        "실무자"
+      ],
+      "created_at": "2026-06-12T21:53:00"
+    },
+    {
+      "title": "자동화 사례 모음",
+      "path": "data/knowledge/20260612_자동화 사례 모음.md",
+      "tags": [
+        "자동화",
+        "사례",
+        "실전",
+        "워크플로"
+      ],
+      "created_at": "2026-06-12T21:54:00"
+    },
+    {
+      "title": "AI 이미지·영상 제작 실전 팁 & 트러블슈팅",
+      "path": "data/knowledge/20260612_AI 이미지 영상 실전 팁과 트러블슈팅.md",
+      "tags": [
+        "이미지생성",
+        "영상제작",
+        "트러블슈팅",
+        "도구비교"
+      ],
+      "created_at": "2026-06-12T21:55:00"
+    },
+    {
+      "title": "GPTs·Gem 실전 만들기",
+      "path": "data/knowledge/20260613_GPTs Gem 실전 만들기.md",
+      "tags": [
+        "GPTs",
+        "Gem",
+        "맞춤챗봇",
+        "실전",
+        "실무자"
+      ],
+      "created_at": "2026-06-13T13:30:00"
+    },
+    {
+      "title": "Claude Code·Cowork 실전 사용",
+      "path": "data/knowledge/20260613_Claude Code Cowork 실전 사용.md",
+      "tags": [
+        "ClaudeCode",
+        "Cowork",
+        "에이전트",
+        "실전",
+        "실무자"
+      ],
+      "created_at": "2026-06-13T13:31:00"
+    },
+    {
+      "title": "AI 지침과 .md 파일 활용법",
+      "path": "data/knowledge/20260613_AI 지침과 md 파일 활용법.md",
+      "tags": [
+        "지침파일",
+        "마크다운",
+        "md",
+        "CLAUDE.md",
+        "실전",
+        "실무자"
+      ],
+      "created_at": "2026-06-13T13:32:00"
+    },
+    {
+      "title": "클로드 코드 설치와 셋업",
+      "path": "data/knowledge/20260613_클로드 코드 설치와 셋업.md",
+      "tags": [
+        "ClaudeCode",
+        "설치",
+        "셋업",
+        "NodeJS",
+        "Git",
+        "실전"
+      ],
+      "created_at": "2026-06-13T14:00:00"
+    },
+    {
+      "title": "클로드 코드 설정과 .claude 디렉터리",
+      "path": "data/knowledge/20260613_클로드 코드 설정과 claude 디렉터리.md",
+      "tags": [
+        "ClaudeCode",
+        "CLAUDE.md",
+        "설정",
+        "settings",
+        "MCP",
+        "Skill",
+        "실전"
+      ],
+      "created_at": "2026-06-13T14:01:00"
+    },
+    {
+      "title": "클로드 코드 Slash 명령어와 Plan Mode",
+      "path": "data/knowledge/20260613_클로드 코드 Slash 명령어와 Plan Mode.md",
+      "tags": [
+        "ClaudeCode",
+        "SlashCommand",
+        "PlanMode",
+        "Permission",
+        "실전"
+      ],
+      "created_at": "2026-06-13T14:02:00"
+    },
+    {
+      "title": "클로드 코드 — CLAUDE.md와 컨텍스트",
+      "path": "data/knowledge/20260613_클로드 코드 CLAUDE.md와 컨텍스트.md",
+      "tags": [
+        "ClaudeCode",
+        "CLAUDE.md",
+        "컨텍스트",
+        "운영계약서",
+        "심화",
+        "실무자"
+      ],
+      "created_at": "2026-06-13T21:00:00"
+    },
+    {
+      "title": "클로드 코드 — Hook 자동 가드레일",
+      "path": "data/knowledge/20260613_클로드 코드 Hook 자동 가드레일.md",
+      "tags": [
+        "ClaudeCode",
+        "Hook",
+        "settings.json",
+        "자동화",
+        "가드레일",
+        "심화"
+      ],
+      "created_at": "2026-06-13T21:01:00"
+    },
+    {
+      "title": "클로드 코드 — Skill 반복 자동화",
+      "path": "data/knowledge/20260613_클로드 코드 Skill 반복 자동화.md",
+      "tags": [
+        "ClaudeCode",
+        "Skill",
+        "SKILL.md",
+        "자동화",
+        "토큰효율",
+        "심화"
+      ],
+      "created_at": "2026-06-13T21:02:00"
+    },
+    {
+      "title": "클로드 코드 — Plugin 패키징",
+      "path": "data/knowledge/20260613_클로드 코드 Plugin 패키징.md",
+      "tags": [
+        "ClaudeCode",
+        "Plugin",
+        "마켓플레이스",
+        "패키징",
+        "공유",
+        "심화"
+      ],
+      "created_at": "2026-06-13T21:03:00"
+    }
+  ]
+}

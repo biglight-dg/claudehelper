@@ -1,0 +1,750 @@
+{
+  "curriculum_title": "AI 업무 기초",
+  "generated_at": "2026-06-13T23:21:23.482350",
+  "slides": [
+    {
+      "slide_number": 1,
+      "type": "title",
+      "title": "AI 업무 기초",
+      "subtitle": "비개발 실무자를 위한 AI 토대 과정. 도구 지형도부터 마크다운·터미널·Claude Code/Cowork·커스텀 AI·Agent/Hook까지, 6주 동안 'AI와 일하는 법'의 기본기를 잡는다."
+    },
+    {
+      "slide_number": 2,
+      "type": "divider",
+      "week": 1,
+      "number": "01",
+      "section": "1주차: AI 도구 지형도 & 3대 챗봇 비교"
+    },
+    {
+      "slide_number": 3,
+      "type": "flow",
+      "week": 1,
+      "section": "1주차",
+      "title": "이번 주차 한눈에",
+      "steps": [
+        {
+          "label": "목표",
+          "items": [
+            "AI 도구를 4가지 종류",
+            "ChatGPT·Gemini·Claude의 강점…",
+            "업무 상황에 맞는 도구 고르는 기준 세우기"
+          ]
+        },
+        {
+          "label": "핵심 개념",
+          "items": [
+            "📊 한눈에 보는 지형도",
+            "📊 한눈에 비교표"
+          ]
+        },
+        {
+          "label": "실습",
+          "items": [
+            "내 업무에서 쓰는",
+            "같은 질문을 3대 챗봇에 던지고 답변 비교",
+            "'이 일에는 이 도구' 나만의 선택 기준표 만…"
+          ]
+        }
+      ]
+    },
+    {
+      "slide_number": 4,
+      "type": "cards",
+      "week": 1,
+      "section": "1주차",
+      "title": "이번 주차 목표",
+      "variant": "number",
+      "items": [
+        "AI 도구를 4가지 종류(채팅형·이미지영상·에이전트형·커스텀)로 분류해 이해",
+        "ChatGPT·Gemini·Claude의 강점 차이 파악",
+        "업무 상황에 맞는 도구 고르는 기준 세우기"
+      ]
+    },
+    {
+      "slide_number": 5,
+      "type": "table",
+      "week": 1,
+      "section": "1주차",
+      "title": "📊 한눈에 보는 지형도",
+      "headers": [
+        "종류",
+        "무엇을 하나",
+        "대표 도구",
+        "비유"
+      ],
+      "rows": [
+        [
+          "채팅형",
+          "대화로 답·글 받기",
+          "ChatGPT·Gemini·Claude",
+          "똑똑한 인턴"
+        ],
+        [
+          "이미지·영상",
+          "그림·영상 생성",
+          "Midjourney·Kling",
+          "주문받는 화가"
+        ],
+        [
+          "에이전트형",
+          "내 컴퓨터에서 직접 작업",
+          "Claude Code·Cowork",
+          "손발 달린 비서"
+        ],
+        [
+          "커스텀",
+          "나만의 전용 AI",
+          "GPTs·Gem·Skill",
+          "전담 직원"
+        ]
+      ]
+    },
+    {
+      "slide_number": 6,
+      "type": "table",
+      "week": 1,
+      "section": "1주차",
+      "title": "📊 한눈에 비교표",
+      "headers": [
+        "상황",
+        "이 AI 써요!"
+      ],
+      "rows": [
+        [
+          "인터넷에서 최신 정보 찾기",
+          "🔵 Gemini"
+        ],
+        [
+          "이미지 만들기",
+          "🔵 Gemini"
+        ],
+        [
+          "코딩, 디버깅",
+          "🟠 Claude"
+        ],
+        [
+          "긴 글 완성도 있게 쓰기",
+          "🟠 Claude"
+        ],
+        [
+          "창의적 글쓰기",
+          "🟠 Claude"
+        ],
+        [
+          "빠른 초안, 일상 질문",
+          "🟢 ChatGPT"
+        ],
+        [
+          "남이 쓴 글 교정·검토",
+          "🟢 ChatGPT"
+        ]
+      ]
+    },
+    {
+      "slide_number": 7,
+      "type": "cards",
+      "week": 1,
+      "section": "1주차",
+      "title": "실습 활동",
+      "variant": "number",
+      "items": [
+        "내 업무에서 쓰는(쓸) AI 도구를 4가지 종류로 분류해보기",
+        "같은 질문을 3대 챗봇에 던지고 답변 비교",
+        "'이 일에는 이 도구' 나만의 선택 기준표 만들기"
+      ]
+    },
+    {
+      "slide_number": 8,
+      "type": "divider",
+      "week": 2,
+      "number": "02",
+      "section": "2주차: 파일·폴더와 마크다운(.md)"
+    },
+    {
+      "slide_number": 9,
+      "type": "flow",
+      "week": 2,
+      "section": "2주차",
+      "title": "이번 주차 한눈에",
+      "steps": [
+        {
+          "label": "목표",
+          "items": [
+            "파일·폴더·확장자 개념 이해",
+            "마크다운 기본 문법 4가지",
+            "왜 AI 시대에 마크다운이 '공용어'인지 이해"
+          ]
+        },
+        {
+          "label": "핵심 개념",
+          "items": [
+            "📂 먼저, 파일과 폴더라는 약속",
+            "🔑 \"마크다운\"과 \".md 파일\"은 다릅니다"
+          ]
+        },
+        {
+          "label": "실습",
+          "items": [
+            "내 컴퓨터에서 확장자별 파일 찾아 종류 맞히기",
+            "메모장으로 마크다운 문서 한 장 직접 작성",
+            "AI에게 받은 답변을 마크다운 그대로 문서에…"
+          ]
+        }
+      ]
+    },
+    {
+      "slide_number": 10,
+      "type": "cards",
+      "week": 2,
+      "section": "2주차",
+      "title": "이번 주차 목표",
+      "variant": "number",
+      "items": [
+        "파일·폴더·확장자 개념 이해",
+        "마크다운 기본 문법 4가지(#, , -, >) 직접 작성",
+        "왜 AI 시대에 마크다운이 '공용어'인지 이해"
+      ]
+    },
+    {
+      "slide_number": 11,
+      "type": "table",
+      "week": 2,
+      "section": "2주차",
+      "title": "📂 먼저, 파일과 폴더라는 약속",
+      "headers": [
+        "확장자",
+        "종류",
+        "비유"
+      ],
+      "rows": [
+        [
+          ".docx",
+          "워드 문서",
+          "정장 입은 서류"
+        ],
+        [
+          ".xlsx",
+          "엑셀 표",
+          "계산기 달린 표"
+        ],
+        [
+          ".pdf",
+          "인쇄용 문서",
+          "코팅된 인쇄물"
+        ],
+        [
+          ".txt",
+          "순수 글자만",
+          "메모지"
+        ],
+        [
+          ".md",
+          "마크다운",
+          "메모지 + 간단한 서식"
+        ]
+      ]
+    },
+    {
+      "slide_number": 12,
+      "type": "table",
+      "week": 2,
+      "section": "2주차",
+      "title": "🔑 \"마크다운\"과 \".md 파일\"은 다릅니다",
+      "headers": [
+        "구분",
+        "무엇인가",
+        "비유"
+      ],
+      "rows": [
+        [
+          "마크다운",
+          "서식을 만드는 글쓰기 방식(문법)",
+          "글씨를 쓰는 '필기법'"
+        ],
+        [
+          ".md 파일",
+          "그 마크다운으로 쓴 파일(저장된 결과물)",
+          "그 필기법으로 채운 '공책'"
+        ]
+      ]
+    },
+    {
+      "slide_number": 13,
+      "type": "cards",
+      "week": 2,
+      "section": "2주차",
+      "title": "실습 활동",
+      "variant": "number",
+      "items": [
+        "내 컴퓨터에서 확장자별 파일 찾아 종류 맞히기",
+        "메모장으로 마크다운 문서 한 장 직접 작성",
+        "AI에게 받은 답변을 마크다운 그대로 문서에 붙여보기"
+      ]
+    },
+    {
+      "slide_number": 14,
+      "type": "divider",
+      "week": 3,
+      "number": "03",
+      "section": "3주차: 터미널이 뭘까 — 검은 화면 두려움 없애기"
+    },
+    {
+      "slide_number": 15,
+      "type": "flow",
+      "week": 3,
+      "section": "3주차",
+      "title": "이번 주차 한눈에",
+      "steps": [
+        {
+          "label": "목표",
+          "items": [
+            "터미널",
+            "기본 명령이 '동사+대상' 구조임을 파악",
+            "AI 시대엔 명령을 외우지 않고 한국어로 시킨…"
+          ]
+        },
+        {
+          "label": "핵심 개념",
+          "items": [
+            "🖱️ 마우스",
+            "⌨️ 명령은 이렇게 생겼어요"
+          ]
+        },
+        {
+          "label": "실습",
+          "items": [
+            "터미널 열어보고 cd·ls",
+            "GUI로 하던 작업을 터미널로 해보고 차이 느…",
+            "'터미널에 대한 첫인상' 한 줄 공유"
+          ]
+        }
+      ]
+    },
+    {
+      "slide_number": 16,
+      "type": "cards",
+      "week": 3,
+      "section": "3주차",
+      "title": "이번 주차 목표",
+      "variant": "number",
+      "items": [
+        "터미널(CLI)과 마우스(GUI)의 차이 이해",
+        "기본 명령이 '동사+대상' 구조임을 파악",
+        "AI 시대엔 명령을 외우지 않고 한국어로 시킨다는 점 체감"
+      ]
+    },
+    {
+      "slide_number": 17,
+      "type": "table",
+      "week": 3,
+      "section": "3주차",
+      "title": "🖱️ 마우스(GUI) vs ⌨️ 터미널(CLI)",
+      "headers": [
+        "구분",
+        "GUI (마우스)",
+        "CLI (터미널)"
+      ],
+      "rows": [
+        [
+          "방법",
+          "아이콘 클릭",
+          "글자 명령 입력"
+        ],
+        [
+          "장점",
+          "쉽고 직관적",
+          "빠르고 정밀, 자동화 가능"
+        ],
+        [
+          "단점",
+          "반복 작업이 번거로움",
+          "처음엔 낯섦"
+        ],
+        [
+          "비유",
+          "사진 메뉴 가리키기",
+          "말로 세밀하게 주문"
+        ]
+      ]
+    },
+    {
+      "slide_number": 18,
+      "type": "table",
+      "week": 3,
+      "section": "3주차",
+      "title": "⌨️ 명령은 이렇게 생겼어요",
+      "headers": [
+        "명령",
+        "뜻",
+        "사람 말로"
+      ],
+      "rows": [
+        [
+          "cd 폴더이름",
+          "change directory",
+          "\"그 폴더로 들어가\""
+        ],
+        [
+          "ls (맥) / dir (윈도우)",
+          "list",
+          "\"여기 뭐 있는지 보여줘\""
+        ],
+        [
+          "mkdir 이름",
+          "make directory",
+          "\"새 폴더 만들어\""
+        ]
+      ]
+    },
+    {
+      "slide_number": 19,
+      "type": "cards",
+      "week": 3,
+      "section": "3주차",
+      "title": "실습 활동",
+      "variant": "number",
+      "items": [
+        "터미널 열어보고 cd·ls(dir) 명령 직접 입력",
+        "GUI로 하던 작업을 터미널로 해보고 차이 느끼기",
+        "'터미널에 대한 첫인상' 한 줄 공유"
+      ]
+    },
+    {
+      "slide_number": 20,
+      "type": "divider",
+      "week": 4,
+      "number": "04",
+      "section": "4주차: Claude Code & Claude Cowork 입문"
+    },
+    {
+      "slide_number": 21,
+      "type": "flow",
+      "week": 4,
+      "section": "4주차",
+      "title": "이번 주차 한눈에",
+      "steps": [
+        {
+          "label": "목표",
+          "items": [
+            "채팅형",
+            "Claude Code가 내 컴퓨터 파일을 직접…",
+            "Claude Code와 Cowork의 성격 차…"
+          ]
+        },
+        {
+          "label": "핵심 개념",
+          "items": [
+            "🤝 Claude Cowork"
+          ]
+        },
+        {
+          "label": "실습",
+          "items": [
+            "'AI가 직접 처리하면 좋을 내 반복 업무'…",
+            "Claude Code에 한국어로 작업 요청해보기",
+            "Code와 Cowork 중 내 업무에 맞는 쪽…"
+          ]
+        }
+      ]
+    },
+    {
+      "slide_number": 22,
+      "type": "cards",
+      "week": 4,
+      "section": "4주차",
+      "title": "이번 주차 목표",
+      "variant": "number",
+      "items": [
+        "채팅형(설명)과 에이전트형(직접 실행)의 차이 이해",
+        "Claude Code가 내 컴퓨터 파일을 직접 다룬다는 개념 파악",
+        "Claude Code와 Cowork의 성격 차이 구분"
+      ]
+    },
+    {
+      "slide_number": 23,
+      "type": "table",
+      "week": 4,
+      "section": "4주차",
+      "title": "🤝 Claude Cowork — 옆에서 함께 일하는 AI",
+      "headers": [
+        "구분",
+        "Claude Code",
+        "Claude Cowork"
+      ],
+      "rows": [
+        [
+          "무대",
+          "터미널(검은 화면)",
+          "함께 일하는 협업 공간"
+        ],
+        [
+          "느낌",
+          "명령하면 처리하는 실행 비서",
+          "옆에서 같이 고민하는 동료"
+        ],
+        [
+          "잘 맞는 일",
+          "파일·자동화·개발 작업",
+          "자료 검토, 단계적 협업 작업"
+        ]
+      ]
+    },
+    {
+      "slide_number": 24,
+      "type": "cards",
+      "week": 4,
+      "section": "4주차",
+      "title": "실습 활동",
+      "variant": "number",
+      "items": [
+        "'AI가 직접 처리하면 좋을 내 반복 업무' 3가지 적기",
+        "Claude Code에 한국어로 작업 요청해보기(시연 위주)",
+        "Code와 Cowork 중 내 업무에 맞는 쪽 골라보기"
+      ]
+    },
+    {
+      "slide_number": 25,
+      "type": "divider",
+      "week": 5,
+      "number": "05",
+      "section": "5주차: 커스텀 AI 비교 — GPTs·Gem·Cowork·Skill"
+    },
+    {
+      "slide_number": 26,
+      "type": "flow",
+      "week": 5,
+      "section": "5주차",
+      "title": "이번 주차 한눈에",
+      "steps": [
+        {
+          "label": "목표",
+          "items": [
+            "맞춤 챗봇의 핵심 가치",
+            "두 묶음 구분: 맞춤 챗봇",
+            "Skill은 커스텀 챗봇이 아니라 'Claud…"
+          ]
+        },
+        {
+          "label": "핵심 개념",
+          "items": [
+            "🧭 먼저, 헷갈리는 두 묶음을 나눕시다",
+            "📊 한눈에 비교"
+          ]
+        },
+        {
+          "label": "실습",
+          "items": [
+            "'내 챗봇이 매번 알아줬으면 하는 것' 지시문…",
+            "GPTs 또는 Gem으로 간단한 맞춤 챗봇 만…",
+            "5개 도구를 '맞춤 챗봇 / Claude 확장…"
+          ]
+        }
+      ]
+    },
+    {
+      "slide_number": 27,
+      "type": "cards",
+      "week": 5,
+      "section": "5주차",
+      "title": "이번 주차 목표",
+      "variant": "number",
+      "items": [
+        "맞춤 챗봇의 핵심 가치(반복 설명 줄이기) 이해",
+        "두 묶음 구분: 맞춤 챗봇(GPTs·Gem) vs Claude 확장(Skill·Agent·Cowork)",
+        "Skill은 커스텀 챗봇이 아니라 'Claude에 더하는 공유 가능한 능력·지식 패키지'임을 이해"
+      ]
+    },
+    {
+      "slide_number": 28,
+      "type": "table",
+      "week": 5,
+      "section": "5주차",
+      "title": "🧭 먼저, 헷갈리는 두 묶음을 나눕시다",
+      "headers": [
+        "묶음",
+        "무엇인가",
+        "해당"
+      ],
+      "rows": [
+        [
+          "① 맞춤 챗봇",
+          "내 지시·말투를 저장한 나만의 챗봇",
+          "GPTs, Gem"
+        ],
+        [
+          "② Claude 확장",
+          "Claude에 능력·협업을 더하는 도구",
+          "Skill, Agent, Cowork"
+        ]
+      ]
+    },
+    {
+      "slide_number": 29,
+      "type": "table",
+      "week": 5,
+      "section": "5주차",
+      "title": "📊 한눈에 비교 (두 묶음으로 구분)",
+      "headers": [
+        "묶음",
+        "도구",
+        "소속",
+        "핵심 성격",
+        "비유"
+      ],
+      "rows": [
+        [
+          "맞춤 챗봇",
+          "GPTs",
+          "ChatGPT",
+          "내 지시 저장한 챗봇",
+          "교육시킨 알바생"
+        ],
+        [
+          "맞춤 챗봇",
+          "Gem",
+          "Gemini",
+          "내 지시 저장한 챗봇",
+          "구글 전담 직원"
+        ],
+        [
+          "Claude 확장",
+          "Skill",
+          "Claude",
+          "더해주는 능력·지식 패키지(공유)",
+          "새로 딴 자격증"
+        ],
+        [
+          "Claude 확장",
+          "Agent",
+          "Claude",
+          "다단계 자율 처리 일꾼",
+          "끝까지 처리하는 실무자"
+        ],
+        [
+          "Claude 확장",
+          "Cowork",
+          "Claude",
+          "협업형 동행 작업",
+          "함께 만드는 짝꿍"
+        ]
+      ]
+    },
+    {
+      "slide_number": 30,
+      "type": "cards",
+      "week": 5,
+      "section": "5주차",
+      "title": "실습 활동",
+      "variant": "number",
+      "items": [
+        "'내 챗봇이 매번 알아줬으면 하는 것' 지시문 초안 작성",
+        "GPTs 또는 Gem으로 간단한 맞춤 챗봇 만들어보기",
+        "5개 도구를 '맞춤 챗봇 / Claude 확장' 두 묶음으로 직접 분류해보기"
+      ]
+    },
+    {
+      "slide_number": 31,
+      "type": "divider",
+      "week": 6,
+      "number": "06",
+      "section": "6주차: Agent와 Hook — 자동화의 시작"
+    },
+    {
+      "slide_number": 32,
+      "type": "flow",
+      "week": 6,
+      "section": "6주차",
+      "title": "이번 주차 한눈에",
+      "steps": [
+        {
+          "label": "목표",
+          "items": [
+            "Agent가 목표를 스스로 여러 단계로 처리하…",
+            "Hook이 '~할 때 → ~한다' 자동 반응…",
+            "내 업무에서 자동화할 지점을 찾는 '자동화의…"
+          ]
+        },
+        {
+          "label": "핵심 개념",
+          "items": [
+            "🔗 Agent와 Hook은 어떻게 협력하나"
+          ]
+        },
+        {
+          "label": "실습",
+          "items": [
+            "내 반복 업무 중 Agent에게 통째로 맡길…",
+            "'~할 때 자동으로 ~되면 좋겠다' Hook…",
+            "6주 과정 회고"
+          ]
+        }
+      ]
+    },
+    {
+      "slide_number": 33,
+      "type": "cards",
+      "week": 6,
+      "section": "6주차",
+      "title": "이번 주차 목표",
+      "variant": "number",
+      "items": [
+        "Agent가 목표를 스스로 여러 단계로 처리하는 일꾼임을 이해",
+        "Hook이 '~할 때 → ~한다' 자동 반응 장치임을 이해",
+        "내 업무에서 자동화할 지점을 찾는 '자동화의 눈' 기르기"
+      ]
+    },
+    {
+      "slide_number": 34,
+      "type": "table",
+      "week": 6,
+      "section": "6주차",
+      "title": "🔗 Agent와 Hook은 어떻게 협력하나",
+      "headers": [
+        "개념",
+        "한 줄 정의",
+        "비유",
+        "성격"
+      ],
+      "rows": [
+        [
+          "Agent",
+          "목표를 스스로 끝까지 처리",
+          "심부름 다녀오는 일꾼",
+          "능동적"
+        ],
+        [
+          "Hook",
+          "특정 순간에 자동 실행",
+          "자동 센서·타이머",
+          "반응적"
+        ]
+      ]
+    },
+    {
+      "slide_number": 35,
+      "type": "cards",
+      "week": 6,
+      "section": "6주차",
+      "title": "실습 활동",
+      "variant": "number",
+      "items": [
+        "내 반복 업무 중 Agent에게 통째로 맡길 일 찾기",
+        "'~할 때 자동으로 ~되면 좋겠다' Hook 아이디어 3개 적기",
+        "6주 과정 회고 — 가장 쓸모 있던 개념 공유"
+      ]
+    },
+    {
+      "slide_number": 36,
+      "type": "summary",
+      "lessons": [
+        "1주차: AI 도구 지형도 & 3대 챗봇 비교",
+        "2주차: 파일·폴더와 마크다운(.md)",
+        "3주차: 터미널이 뭘까 — 검은 화면 두려움 없애기",
+        "4주차: Claude Code & Claude Cowork 입문",
+        "5주차: 커스텀 AI 비교 — GPTs·Gem·Cowork·Skill",
+        "6주차: Agent와 Hook — 자동화의 시작"
+      ],
+      "source": "비개발 실무자를 위한 AI 토대 과정. 도구 지형도부터 마크다운·터미널·Claude Code/Cowork·커스텀 AI·Agent/Hook까지, 6주 동안 'AI와 일하는 법'의 기본기를 잡는다."
+    }
+  ]
+}

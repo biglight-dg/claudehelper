@@ -1,0 +1,27 @@
+# === 비밀 파일 (절대 올리면 안 됨) ===
+.env
+.env.local
+*.key
+secrets/
+
+# .env.example 은 키 없는 견본이라 올려도 됨 (아래 한 줄이 예외 처리)
+!.env.example
+
+# === Python 캐시/가상환경 ===
+__pycache__/
+*.pyc
+*.pyo
+.venv/
+venv/
+env/
+
+# === OS / 에디터 부산물 ===
+Thumbs.db
+.DS_Store
+*.swp
+.idea/
+.vscode/
+
+# === 생성물 (필요에 따라 주석 해제) ===
+# data/outputs/        # 생성된 PPTX 등 결과물
+# data/inbox/          # 사용자가 넣은 원본 (개인자료면 제외 고려)

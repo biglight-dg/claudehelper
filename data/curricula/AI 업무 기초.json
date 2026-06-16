@@ -1,0 +1,136 @@
+{
+  "id": "cur_20260612_211500",
+  "title": "AI 업무 기초",
+  "description": "비개발 실무자를 위한 AI 토대 과정. 도구 지형도부터 마크다운·터미널·Claude Code/Cowork·커스텀 AI·Agent/Hook까지, 6주 동안 'AI와 일하는 법'의 기본기를 잡는다.",
+  "target_audience": "비개발 실무자",
+  "created_at": "2026-06-12T21:15:00",
+  "updated_at": "2026-06-13T23:21:23.685933",
+  "sessions": [
+    {
+      "id": "ses_w1_20260612_211500",
+      "week": 1,
+      "title": "AI 도구 지형도 & 3대 챗봇 비교",
+      "objectives": [
+        "AI 도구를 4가지 종류(채팅형·이미지영상·에이전트형·커스텀)로 분류해 이해",
+        "ChatGPT·Gemini·Claude의 강점 차이 파악",
+        "업무 상황에 맞는 도구 고르는 기준 세우기"
+      ],
+      "duration": "60분",
+      "knowledge_refs": [
+        "data/knowledge/20260612_AI도구 지형도.md",
+        "data/knowledge/20260611_ChatGPT_vs_Gemini_vs_Claude_비교_가이드.md"
+      ],
+      "activities": [
+        "내 업무에서 쓰는(쓸) AI 도구를 4가지 종류로 분류해보기",
+        "같은 질문을 3대 챗봇에 던지고 답변 비교",
+        "'이 일에는 이 도구' 나만의 선택 기준표 만들기"
+      ],
+      "notes": "수강생 대부분이 채팅형만 써봤을 가능성이 높음. 종류 3·4(에이전트·커스텀)는 '앞으로 배울 것'으로 예고만 하고 깊이 들어가지 말 것. 도구 이름 암기 금지 — 카테고리 개념이 핵심."
+    },
+    {
+      "id": "ses_w2_20260612_211501",
+      "week": 2,
+      "title": "파일·폴더와 마크다운(.md)",
+      "objectives": [
+        "파일·폴더·확장자 개념 이해",
+        "마크다운 기본 문법 4가지(#, **, -, >) 직접 작성",
+        "왜 AI 시대에 마크다운이 '공용어'인지 이해"
+      ],
+      "duration": "60분",
+      "knowledge_refs": [
+        "data/knowledge/20260612_마크다운과 파일 기초.md"
+      ],
+      "activities": [
+        "내 컴퓨터에서 확장자별 파일 찾아 종류 맞히기",
+        "메모장으로 마크다운 문서 한 장 직접 작성",
+        "AI에게 받은 답변을 마크다운 그대로 문서에 붙여보기"
+      ],
+      "notes": "실습은 무조건 직접 타이핑하게 할 것. '기호 뒤 한 칸 띄우기' 규칙을 강조. 워드와 비교(자전거 vs 자동차)하면 이해가 빠름."
+    },
+    {
+      "id": "ses_w3_20260612_211502",
+      "week": 3,
+      "title": "터미널이 뭘까 — 검은 화면 두려움 없애기",
+      "objectives": [
+        "터미널(CLI)과 마우스(GUI)의 차이 이해",
+        "기본 명령이 '동사+대상' 구조임을 파악",
+        "AI 시대엔 명령을 외우지 않고 한국어로 시킨다는 점 체감"
+      ],
+      "duration": "60분",
+      "knowledge_refs": [
+        "data/knowledge/20260612_터미널 쉽게 이해하기.md"
+      ],
+      "activities": [
+        "터미널 열어보고 cd·ls(dir) 명령 직접 입력",
+        "GUI로 하던 작업을 터미널로 해보고 차이 느끼기",
+        "'터미널에 대한 첫인상' 한 줄 공유"
+      ],
+      "notes": "두려움 해소가 1순위 목표. '틀려도 컴퓨터 안 망가진다'를 반복 강조. 운영체제(맥/윈도우)별 명령 차이(ls/dir) 미리 안내."
+    },
+    {
+      "id": "ses_w4_20260612_211503",
+      "week": 4,
+      "title": "Claude Code & Claude Cowork 입문",
+      "objectives": [
+        "채팅형(설명)과 에이전트형(직접 실행)의 차이 이해",
+        "Claude Code가 내 컴퓨터 파일을 직접 다룬다는 개념 파악",
+        "Claude Code와 Cowork의 성격 차이 구분"
+      ],
+      "duration": "60분",
+      "knowledge_refs": [
+        "data/knowledge/20260612_Claude Code와 Cowork 입문.md"
+      ],
+      "activities": [
+        "'AI가 직접 처리하면 좋을 내 반복 업무' 3가지 적기",
+        "Claude Code에 한국어로 작업 요청해보기(시연 위주)",
+        "Code와 Cowork 중 내 업무에 맞는 쪽 골라보기"
+      ],
+      "notes": "Cowork 세부 기능·요금은 변동이 잦으니 수업 전 최신 확인 필요(지식파일 검토 요청 표시 참고). AI가 파일을 직접 다루므로 '실행 전 확인 습관'을 안전 과정 예고로 언급. 여기선 '개념 이해'까지만 — 실제 설치·한국어 명령·Plan Mode·권한 4단계·CLAUDE.md 등 실전은 ③ '멋지게 사용하기' W5~W6에서 깊게 다룸을 예고할 것."
+    },
+    {
+      "id": "ses_w5_20260612_211504",
+      "week": 5,
+      "title": "커스텀 AI 비교 — GPTs·Gem·Cowork·Skill",
+      "objectives": [
+        "맞춤 챗봇의 핵심 가치(반복 설명 줄이기) 이해",
+        "두 묶음 구분: 맞춤 챗봇(GPTs·Gem) vs Claude 확장(Skill·Agent·Cowork)",
+        "Skill은 커스텀 챗봇이 아니라 'Claude에 더하는 공유 가능한 능력·지식 패키지'임을 이해"
+      ],
+      "duration": "60분",
+      "knowledge_refs": [
+        "data/knowledge/20260612_커스텀 AI 비교 GPTs Gem Cowork Skill.md"
+      ],
+      "activities": [
+        "'내 챗봇이 매번 알아줬으면 하는 것' 지시문 초안 작성",
+        "GPTs 또는 Gem으로 간단한 맞춤 챗봇 만들어보기",
+        "5개 도구를 '맞춤 챗봇 / Claude 확장' 두 묶음으로 직접 분류해보기"
+      ],
+      "notes": "이 세션 최대 함정: 'Skill = 커스텀 AI'라는 오해. Skill은 챗봇이 아니라 Claude에 능력을 더하는 공유 패키지('새 자격증' 비유)임을 반드시 바로잡을 것. 두 묶음(① 맞춤 챗봇 GPTs·Gem / ② Claude 확장 Skill·Agent·Cowork)으로 단순화하고 5개를 통째로 외우게 하지 말 것. 실제로 만들어보는 건 GPTs/Gem(챗봇)만 — Skill/Agent/Cowork는 개념 이해 위주. ⚠️ Cowork·Skill 세부는 변동 잦으니 검토 요청 표시 확인. 실전 사용법은 ③ '멋지게 사용하기'에서 다룸을 예고."
+    },
+    {
+      "id": "ses_w6_20260612_211505",
+      "week": 6,
+      "title": "Agent와 Hook — 자동화의 시작",
+      "objectives": [
+        "Agent가 목표를 스스로 여러 단계로 처리하는 일꾼임을 이해",
+        "Hook이 '~할 때 → ~한다' 자동 반응 장치임을 이해",
+        "내 업무에서 자동화할 지점을 찾는 '자동화의 눈' 기르기"
+      ],
+      "duration": "60분",
+      "knowledge_refs": [
+        "data/knowledge/20260612_Agent와 Hook 개념 잡기.md"
+      ],
+      "activities": [
+        "내 반복 업무 중 Agent에게 통째로 맡길 일 찾기",
+        "'~할 때 자동으로 ~되면 좋겠다' Hook 아이디어 3개 적기",
+        "6주 과정 회고 — 가장 쓸모 있던 개념 공유"
+      ],
+      "notes": "직접 Agent/Hook을 만들 필요는 없음을 분명히 할 것. 목표는 '자동화 관점' 획득. 이 과정 자체가 Agent들로 굴러가고, 세션 시작 핸드오프가 Hook이라는 실제 예시를 보여주면 효과적."
+    }
+  ],
+  "generated": {
+    "slides_path": "C:\\Users\\chris\\claudehelper\\data\\curricula\\AI 업무 기초_slides.json",
+    "pptx_path": "C:\\Users\\chris\\claudehelper\\data\\outputs\\20260613_232123_AI 업무 기초.pptx",
+    "last_generated": "2026-06-13T23:21:23.482350"
+  }
+}
