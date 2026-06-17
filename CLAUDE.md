@@ -64,8 +64,35 @@ streamlit run app.py
   → sources.add_expert(name, platform, url, note)
 ```
 
-- 앱 **📡 소스** 탭에서도 RSS/전문가 등록·새로고침·게시물 수집 가능
+- 앱 **📡 소스** 탭에서 RSS/전문가 등록·관리 (RSS 수집은 **📰 최근 뉴스** 탭이 담당)
 - 인스타/X **전체 크롤링은 하지 않는다**(ToS·차단 위험). 고른 전문가 게시물 링크만 추적한다.
+
+### 최근 뉴스 & 주간 브리핑
+
+RSS 뉴스는 `inbox`(정리 대상 문서)와 분리된 **뉴스 스트림**(`data/news.json`)으로 흐른다.
+`inbox`는 파일·메모·SNS·웹검색 자료 전용. 함수는 `tools/news.py`.
+
+```
+뉴스 수집 (하루 1회 자동 + 수동)
+  → 앱 📰 최근 뉴스 탭 진입 시 하루 1회 자동(collect_news_daily)
+  → "뉴스 수집해줘" 또는 탭의 '지금 수집' 버튼 → news.collect_news()
+  → news.json에 기록만 함(개별 지식 문서로 변환하지 않음), 중복 자동 방지
+
+"이번 주 뉴스 정리해줘"  (주간 통합 요약 — 뉴닉 스타일, 수동 트리거)
+  1. news.build_digest_source(days=7) 로 최근 항목을 카테고리별로 받음
+  2. **핵심 3건** 선정 → fetch_url/just-scrape로 **원문 전문 보강** → 길게(여러 문단) +
+     **생각해볼 질문** 작성
+  3. **자투리 10건**(전 소스 핵심) + **필요 기술/공부거리** 정리.
+     자투리 blurb는 **1~2문장**으로 충실히 써서 클릭 없이도 내용이 이해되게 한다.
+  4. 구조화 dict 구성:
+     {title, period, intro, deep_dives[3]{emoji,title,body,question,sources[]},
+      shorts[~10]{title, blurb(1~2문장), source, link}, skills[], study[]}
+  5. news.save_digest(digest, ids)
+     → digest_to_markdown()로 지식베이스 문서 저장 + news.json digests 등록 + in_digest=True
+  6. 앱 📰 최근 뉴스 탭 상단 '이번 주 통합 요약' 카드로 렌더 (지난 브리핑은 아카이브)
+```
+
+- **매주 자동 생성**: Windows 작업 스케줄러 `AI교육팀_주간뉴스브리핑`이 매주 월요일 09:23에 `tools/weekly_digest.ps1`을 실행 → `claude -p --dangerously-skip-permissions`로 위 절차를 무인 수행(PC가 꺼져 있었으면 켜진 직후 실행). 로그: `C:\Users\chris\.claude\weekly_digest.log`. 수동 트리거(`이번 주 뉴스 정리해줘`)도 그대로 가능.
 
 ### 유튜브 영상을 커리큘럼 참고자료로 넣기
 
@@ -188,13 +215,15 @@ Claude Code가 교육자 역할로 Canva MCP를 사용해 슬라이드를 생성
 | `agents/qa.py` | QA: 난이도·정확성·일관성 검토 |
 | `agents/curriculum.py` | 커리큘럼: 생성·관리, 슬라이드 데이터 빌드 |
 | `tools/reader.py` | inbox 파일 읽기, URL → 텍스트 추출, 유튜브 메타(`fetch_youtube_meta`) |
-| `tools/sources.py` | 입력 소스 커넥터: RSS(`pull_all_rss`)·전문가 SNS(`fetch_social_post`)·웹검색 적재(`save_research`) |
+| `tools/sources.py` | 입력 소스 커넥터: RSS 워치리스트·전문가 SNS(`fetch_social_post`)·웹검색 적재(`save_research`) |
+| `tools/news.py` | 뉴스 스트림: 수집(`collect_news`)·열람(`recent_items`)·주간 브리핑(`build_digest_source`/`save_digest`) |
 | `tools/file_tools.py` | DB 로드/저장, 지식 파일 저장 |
 | `tools/curriculum_tools.py` | 커리큘럼 CRUD, 슬라이드 JSON 저장, 세션 참고자료(`add_session_reference`) |
 | `tools/aux_tools.py` | 보조 프로그램 카탈로그 CRUD (전역) |
 | `tools/pptx_maker.py` | python-pptx 기반 PPT 생성 (흑백, Pretendard) |
 | `data/aux_programs.json` | 보조 프로그램(확장·단축키·툴) 전역 카탈로그 |
 | `data/sources.json` | 입력 소스 워치리스트(RSS·전문가 SNS) + 수집 이력(`seen`) |
+| `data/news.json` | 뉴스 스트림(수집된 RSS 항목) + 주간 브리핑 인덱스(`digests`) |
 | `data/inbox/` | 사용자가 넣은 원본 문서 |
 | `data/knowledge/` | 교육자가 정리한 Markdown |
 | `data/knowledge_db.json` | 지식 메타데이터 인덱스 |

@@ -5,7 +5,11 @@ from tools.file_tools import load_db, save_knowledge_file
 from tools.reader import read_inbox_files, fetch_url, save_to_inbox, read_pdf
 from tools.sources import (
     load_sources, add_rss, remove_rss, add_expert, remove_expert,
-    pull_all_rss, save_social_post,
+    save_social_post,
+)
+from tools.news import (
+    collect_news, collect_news_daily, recent_items, sources_in_news,
+    build_digest_source, load_news, latest_digest,
 )
 from tools.curriculum_tools import (
     load_curriculum_db, load_curriculum, load_slides,
@@ -382,6 +386,86 @@ def _is_processed(file_path: Path, db_items: list[dict]) -> bool:
     return False
 
 
+def _render_digest(digest: dict) -> None:
+    """주간 브리핑(구조화 dict)을 뉴닉 스타일 카드 레이아웃으로 렌더한다.
+
+    구조화 필드(deep_dives 등)가 없으면 knowledge_path 마크다운으로 폴백한다.
+    """
+    if not digest.get("deep_dives") and not digest.get("intro"):
+        p = Path(digest.get("knowledge_path") or digest.get("path", ""))
+        if p.exists():
+            st.markdown(p.read_text(encoding="utf-8"))
+        else:
+            st.warning("브리핑 내용을 찾을 수 없습니다.")
+        return
+
+    # 히어로
+    st.markdown(
+        '<div style="background:#111;color:#fff;border-radius:12px;padding:1.4rem 1.6rem;margin-bottom:1.2rem;">'
+        f'<div style="font-size:1.3rem;font-weight:800;margin-bottom:0.5rem;">📋 이번 주 AI 한 편으로</div>'
+        f'<div style="font-size:0.85rem;color:#aaa;margin-bottom:0.7rem;">{digest.get("period","")}</div>'
+        f'<div style="font-size:1.02rem;line-height:1.6;color:#eee;">{digest.get("intro","")}</div>'
+        '</div>',
+        unsafe_allow_html=True,
+    )
+
+    # 핵심 3 카드
+    for i, d in enumerate(digest.get("deep_dives", []), 1):
+        with st.container(border=True):
+            st.markdown(
+                f"<div style='font-size:1.25rem;font-weight:800;color:inherit;margin-bottom:0.2rem;'>"
+                f"{d.get('emoji','🔥')} 핵심 {i}. {d.get('title','')}</div>",
+                unsafe_allow_html=True,
+            )
+            if d.get("body"):
+                st.markdown(d["body"])
+            if d.get("question"):
+                st.markdown(
+                    '<div style="border-left:4px solid #888;background:#1c1c1c;'
+                    'padding:0.7rem 1rem;border-radius:6px;margin:0.6rem 0;">'
+                    '<b style="color:#ffffff;">❔ 생각해볼 질문</b><br>'
+                    f'<span style="color:#eaeaea;">{d["question"]}</span></div>',
+                    unsafe_allow_html=True,
+                )
+            srcs = d.get("sources", [])
+            if srcs:
+                cited = " · ".join(
+                    f"[{s.get('name','출처')}]({s['url']})" if s.get("url") else s.get("name", "")
+                    for s in srcs
+                )
+                st.caption(f"출처: {cited}")
+
+    # 자투리 뉴스 (제목 + 두 줄 요약을 줄바꿈해 클릭 없이도 이해되게)
+    shorts = digest.get("shorts", [])
+    if shorts:
+        st.markdown("#### 📌 자투리 뉴스")
+        for s in shorts:
+            head = f"[{s.get('title','')}]({s['link']})" if s.get("link") else s.get("title", "")
+            line = f"- **{head}**"
+            blurb = (s.get("blurb") or "").strip()
+            src = f" <small>({s['source']})</small>" if s.get("source") else ""
+            if blurb:
+                line += f"  \n  {blurb}{src}"
+            elif src:
+                line += f"  \n  {src}"
+            st.markdown(line, unsafe_allow_html=True)
+
+    # 필요 기술 · 공부거리
+    c1, c2 = st.columns(2)
+    if digest.get("skills"):
+        with c1:
+            with st.container(border=True):
+                st.markdown("**🛠 필요 기술 · 알아두면 좋은 개념**")
+                for x in digest["skills"]:
+                    st.markdown(f"- {x}")
+    if digest.get("study"):
+        with c2:
+            with st.container(border=True):
+                st.markdown("**📚 이번 주 공부거리**")
+                for x in digest["study"]:
+                    st.markdown(f"- {x}")
+
+
 # ── 전역 헤더 ──────────────────────────────────────────────────
 st.title("📚 나만의 지식 베이스")
 st.caption("문서를 모아두면 Claude Code(팀장)가 교육 자료로 정리해 줍니다.")
@@ -413,8 +497,8 @@ with st.sidebar:
     sb_c2.metric("지식 문서", len(_sb_db_items))
 
 
-tab_inbox, tab_sources, tab_memo, tab_kb, tab_cur, tab_aux, tab_agents = st.tabs(
-    ["📥 받은 문서", "📡 소스", "✏️ 직접 메모", "📚 지식 베이스", "📋 커리큘럼",
+tab_inbox, tab_sources, tab_news, tab_memo, tab_kb, tab_cur, tab_aux, tab_agents = st.tabs(
+    ["📥 받은 문서", "📡 소스", "📰 최근 뉴스", "✏️ 직접 메모", "📚 지식 베이스", "📋 커리큘럼",
      "🧰 보조 프로그램", "🤖 에이전트"]
 )
 
@@ -540,17 +624,7 @@ with tab_sources:
                 st.success(f"피드 추가됨: {rss_title or rss_url}")
                 st.rerun()
 
-        if st.button("🔄 전체 새로고침 → inbox", key="pull_rss_btn"):
-            if not src["rss"]:
-                st.warning("등록된 피드가 없습니다. 먼저 피드를 추가하세요.")
-            else:
-                with st.spinner("피드를 가져오는 중..."):
-                    saved = pull_all_rss()
-                if saved:
-                    st.success(f"새 항목 {len(saved)}개를 inbox에 저장했습니다.")
-                else:
-                    st.info("새로 가져온 항목이 없습니다 (이미 수집된 글).")
-                st.rerun()
+        st.caption("등록한 RSS는 **📰 최근 뉴스** 탭에서 자동으로 수집됩니다.")
 
         if src["rss"]:
             st.caption(f"등록된 피드 {len(src['rss'])}개")
@@ -600,6 +674,78 @@ with tab_sources:
                     st.rerun()
         else:
             st.info("아직 등록된 전문가가 없습니다.")
+
+# ── 탭: 최근 뉴스 (뉴스 스트림 + 주간 브리핑) ───────────────────
+with tab_news:
+    st.markdown("## 📰 최근 뉴스")
+    st.caption(
+        "구독한 RSS에서 모은 AI 소식이 쌓입니다(앱 열 때 하루 1회 자동 수집). "
+        "지식 문서와 달리 '흘러가는 뉴스'이며, 주 1회 핵심만 골라 브리핑으로 정리합니다."
+    )
+
+    # 앱 열 때 하루 1회 자동 수집 (세션당 1회만 시도)
+    if not st.session_state.get("news_daily_done"):
+        got = collect_news_daily()
+        st.session_state["news_daily_done"] = True
+        if got:
+            st.toast(f"오늘의 새 뉴스 {got}건을 수집했습니다.", icon="📰")
+
+    news_db = load_news()
+    digests = news_db.get("digests", [])
+
+    # ── 1) 이번 주 통합 요약 (뉴닉 스타일) ──
+    latest = latest_digest()
+    if latest:
+        _render_digest(latest)
+        st.caption("🔄 새로 정리하려면 Claude Code에 **`이번 주 뉴스 정리해줘`** 라고 요청하세요.")
+    else:
+        st.info(
+            "아직 이번 주 통합 요약이 없습니다.  \n"
+            "**Claude Code에 `이번 주 뉴스 정리해줘`** 라고 요청하면 핵심 뉴스 3개(생각해볼 질문 포함)"
+            " + 자투리 10개 + 필요 기술·공부거리로 정리해 드립니다."
+        )
+
+    # ── 2) 뉴스 스트림 (접기) ──
+    st.divider()
+    with st.expander("🗞 전체 뉴스 스트림 보기 (원본 수집 목록)", expanded=False):
+        c1, c2, c3 = st.columns([1, 1, 1])
+        with c1:
+            if st.button("🔄 지금 수집", key="news_collect_btn"):
+                with st.spinner("피드에서 새 글을 가져오는 중..."):
+                    added = collect_news()
+                st.success(f"새 뉴스 {added}건 수집") if added else st.info("새 글이 없습니다.")
+                st.rerun()
+        with c2:
+            period = st.selectbox("기간", [7, 14, 30], format_func=lambda d: f"최근 {d}일", key="news_period")
+        with c3:
+            src_opts = ["전체"] + sources_in_news()
+            sel_src = st.selectbox("출처", src_opts, key="news_source")
+
+        src_filter = None if sel_src == "전체" else sel_src
+        items = recent_items(days=period, source=src_filter)
+        st.markdown(f"**뉴스 {len(items)}건 · 최근 {period}일**")
+        if not items:
+            st.info("아직 수집된 뉴스가 없습니다. '지금 수집'을 눌러보세요.")
+        else:
+            for it in items:
+                pub = f" · {it['published'][:16]}" if it.get("published") else ""
+                badge = "🗂" if it.get("in_digest") else ""
+                st.markdown(
+                    f"**[{it['title']}]({it['link']})**  \n"
+                    f"<small>{badge} {it['source']} · {it.get('category','')}{pub}</small>",
+                    unsafe_allow_html=True,
+                )
+                summ = (it.get("summary") or "").strip()
+                if summ:
+                    st.caption(summ[:180] + ("..." if len(summ) > 180 else ""))
+
+    # ── 3) 지난 브리핑 아카이브 ──
+    if len(digests) > 1:
+        st.divider()
+        st.markdown("### 🗂 지난 브리핑")
+        for d in digests[1:]:
+            with st.expander(f"📄 {d['title']}  ·  {d.get('period','')}  ({d.get('item_count',0)}건)"):
+                _render_digest(d)
 
 # ── 탭 2: 직접 메모 ────────────────────────────────────────────
 with tab_memo:
