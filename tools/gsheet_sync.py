@@ -17,7 +17,11 @@ import gspread
 from google.oauth2.service_account import Credentials
 
 sys.path.insert(0, str(Path(__file__).parent))
-from export_sheets_csv import build_curriculum_rows, build_knowledge_rows
+from export_sheets_csv import (
+    build_curriculum_rows,
+    build_knowledge_rows,
+    build_sources_rows,
+)
 
 BASE = Path(__file__).parent.parent
 KEY_FILE = BASE / "secrets" / "gcp_service_account.json"
@@ -63,7 +67,8 @@ def sync() -> str:
     sh = gc.open_by_key(_spreadsheet_id())
     n1 = _push(sh, "커리큘럼_세션", *build_curriculum_rows())
     n2 = _push(sh, "지식_자료", *build_knowledge_rows())
-    print(f"동기화 완료: 커리큘럼 세션 {n1}행, 지식 자료 {n2}행")
+    n3 = _push(sh, "소스_워치리스트", *build_sources_rows())
+    print(f"동기화 완료: 커리큘럼 세션 {n1}행, 지식 자료 {n2}행, 소스 {n3}행")
     print(f"시트 URL: {sh.url}")
     return sh.url
 

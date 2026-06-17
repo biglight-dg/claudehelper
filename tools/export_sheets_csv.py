@@ -14,6 +14,7 @@ from pathlib import Path
 BASE = Path(__file__).parent.parent
 CURRICULA_DIR = BASE / "data" / "curricula"
 KNOWLEDGE_DB = BASE / "data" / "knowledge_db.json"
+SOURCES_JSON = BASE / "data" / "sources.json"
 OUT_DIR = BASE / "data" / "outputs" / "sheets"
 
 
@@ -56,6 +57,30 @@ def build_knowledge_rows() -> tuple[list[str], list[dict]]:
     return fields, rows
 
 
+def build_sources_rows() -> tuple[list[str], list[dict]]:
+    """입력 소스 워치리스트: RSS 피드 + 전문가 SNS를 한 표로(내부용 seen 제외)."""
+    db = json.loads(SOURCES_JSON.read_text(encoding="utf-8"))
+    rows = []
+    for r in db.get("rss", []):
+        rows.append({
+            "종류": "RSS",
+            "이름": r.get("title", ""),
+            "분류/플랫폼": r.get("category", ""),
+            "URL": r.get("url", ""),
+            "비고": "",
+        })
+    for e in db.get("experts", []):
+        rows.append({
+            "종류": "전문가",
+            "이름": e.get("name", ""),
+            "분류/플랫폼": e.get("platform", ""),
+            "URL": e.get("url", ""),
+            "비고": e.get("note", ""),
+        })
+    fields = ["종류", "이름", "분류/플랫폼", "URL", "비고"]
+    return fields, rows
+
+
 def _write_csv(filename: str, fields: list[str], rows: list[dict]) -> Path:
     OUT_DIR.mkdir(parents=True, exist_ok=True)
     out = OUT_DIR / filename
@@ -70,6 +95,8 @@ def _write_csv(filename: str, fields: list[str], rows: list[dict]) -> Path:
 if __name__ == "__main__":
     p1 = _write_csv("커리큘럼_세션.csv", *build_curriculum_rows())
     p2 = _write_csv("지식_자료.csv", *build_knowledge_rows())
+    p3 = _write_csv("소스_워치리스트.csv", *build_sources_rows())
     print("생성 완료:")
     print(f"  - {p1}")
     print(f"  - {p2}")
+    print(f"  - {p3}")
