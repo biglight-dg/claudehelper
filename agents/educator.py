@@ -120,6 +120,13 @@ class Educator:
                     slide.get("title", ""),
                     slide.get("steps", []),
                 )
+            elif stype == "concept":
+                maker.add_concept_slide(
+                    slide.get("section", ""),
+                    slide.get("term", slide.get("title", "")),
+                    slide.get("explain", ""),
+                    slide.get("analogy", ""),
+                )
             elif stype == "comparison":
                 maker.add_comparison_slide(
                     slide.get("title", ""),

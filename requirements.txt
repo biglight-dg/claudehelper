@@ -4,3 +4,8 @@ beautifulsoup4>=4.12.0
 python-dotenv>=1.0.0
 python-pptx>=1.0.0
 pypdf>=4.0.0
+feedparser>=6.0.0
+
+# Google Sheets 동기화 (tools/gsheet_sync.py)
+gspread>=6.0.0
+google-auth>=2.0.0

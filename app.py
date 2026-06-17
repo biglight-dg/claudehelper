@@ -3,6 +3,10 @@ import streamlit as st
 import streamlit.components.v1 as components
 from tools.file_tools import load_db, save_knowledge_file
 from tools.reader import read_inbox_files, fetch_url, save_to_inbox, read_pdf
+from tools.sources import (
+    load_sources, add_rss, remove_rss, add_expert, remove_expert,
+    pull_all_rss, save_social_post,
+)
 from tools.curriculum_tools import (
     load_curriculum_db, load_curriculum, load_slides,
     build_markdown_doc, build_session_doc,
@@ -409,8 +413,8 @@ with st.sidebar:
     sb_c2.metric("지식 문서", len(_sb_db_items))
 
 
-tab_inbox, tab_memo, tab_kb, tab_cur, tab_aux, tab_agents = st.tabs(
-    ["📥 받은 문서", "✏️ 직접 메모", "📚 지식 베이스", "📋 커리큘럼",
+tab_inbox, tab_sources, tab_memo, tab_kb, tab_cur, tab_aux, tab_agents = st.tabs(
+    ["📥 받은 문서", "📡 소스", "✏️ 직접 메모", "📚 지식 베이스", "📋 커리큘럼",
      "🧰 보조 프로그램", "🤖 에이전트"]
 )
 
@@ -511,6 +515,91 @@ with tab_inbox:
                         st.rerun()
     else:
         st.info("inbox가 비어 있습니다. 파일을 올리거나 URL을 입력해 보세요.")
+
+# ── 탭: 소스 (RSS · 전문가 SNS) ─────────────────────────────────
+with tab_sources:
+    st.markdown("## 📡 소스")
+    st.caption(
+        "RSS 피드와 전문가 SNS를 등록해 자료를 inbox로 자동 수집합니다. "
+        "웹 검색이나 SNS 본문 정리는 Claude Code에 '정리해줘'라고 요청하면 더 안정적입니다."
+    )
+
+    src = load_sources()
+
+    col_rss, col_sns = st.columns(2)
+
+    # ── RSS 피드 ──
+    with col_rss:
+        st.markdown("### 📰 RSS 피드")
+        with st.form("add_rss_form", clear_on_submit=True):
+            rss_title = st.text_input("피드 이름", placeholder="예: 한 AI 블로그")
+            rss_url = st.text_input("피드 URL", placeholder="https://.../feed.xml")
+            rss_cat = st.text_input("분류 (선택)", placeholder="예: 뉴스 / 연구")
+            if st.form_submit_button("피드 추가") and rss_url.strip():
+                add_rss(rss_title or rss_url, rss_url, rss_cat)
+                st.success(f"피드 추가됨: {rss_title or rss_url}")
+                st.rerun()
+
+        if st.button("🔄 전체 새로고침 → inbox", key="pull_rss_btn"):
+            if not src["rss"]:
+                st.warning("등록된 피드가 없습니다. 먼저 피드를 추가하세요.")
+            else:
+                with st.spinner("피드를 가져오는 중..."):
+                    saved = pull_all_rss()
+                if saved:
+                    st.success(f"새 항목 {len(saved)}개를 inbox에 저장했습니다.")
+                else:
+                    st.info("새로 가져온 항목이 없습니다 (이미 수집된 글).")
+                st.rerun()
+
+        if src["rss"]:
+            st.caption(f"등록된 피드 {len(src['rss'])}개")
+            for r in src["rss"]:
+                c1, c2 = st.columns([5, 1])
+                cat = f" · {r['category']}" if r.get("category") else ""
+                c1.markdown(f"**{r['title']}**{cat}  \n<small>{r['url']}</small>", unsafe_allow_html=True)
+                if c2.button("삭제", key=f"delrss_{r['url']}"):
+                    remove_rss(r["url"])
+                    st.rerun()
+        else:
+            st.info("아직 등록된 RSS 피드가 없습니다.")
+
+    # ── 전문가 SNS ──
+    with col_sns:
+        st.markdown("### 👤 전문가 SNS")
+        with st.form("add_expert_form", clear_on_submit=True):
+            ex_name = st.text_input("이름", placeholder="예: 홍길동")
+            ex_platform = st.selectbox("플랫폼", ["instagram", "x", "linkedin", "threads", "web"])
+            ex_url = st.text_input("프로필 URL", placeholder="https://...")
+            ex_note = st.text_input("메모 (선택)", placeholder="예: 프롬프트 엔지니어링 전문")
+            if st.form_submit_button("전문가 추가") and ex_url.strip():
+                add_expert(ex_name or ex_url, ex_platform, ex_url, ex_note)
+                st.success(f"전문가 추가됨: {ex_name or ex_url}")
+                st.rerun()
+
+        st.markdown("#### 게시물 가져오기")
+        post_url = st.text_input("게시물 링크", placeholder="https://...", key="sns_post_url")
+        if st.button("게시물 → inbox", key="sns_post_btn") and post_url.strip():
+            with st.spinner("게시물 정보를 가져오는 중..."):
+                path = save_social_post(post_url.strip())
+            st.success(f"저장 완료: {path.name}")
+            st.caption("캡션이 부실하면 Claude Code에 'just-scrape로 가져와줘'라고 요청하세요.")
+            st.rerun()
+
+        if src["experts"]:
+            st.caption(f"등록된 전문가 {len(src['experts'])}명")
+            for e in src["experts"]:
+                c1, c2 = st.columns([5, 1])
+                note = f" · {e['note']}" if e.get("note") else ""
+                c1.markdown(
+                    f"**{e['name']}** ({e['platform']}){note}  \n<small>{e['url']}</small>",
+                    unsafe_allow_html=True,
+                )
+                if c2.button("삭제", key=f"delex_{e['url']}"):
+                    remove_expert(e["url"])
+                    st.rerun()
+        else:
+            st.info("아직 등록된 전문가가 없습니다.")
 
 # ── 탭 2: 직접 메모 ────────────────────────────────────────────
 with tab_memo:
@@ -656,36 +745,87 @@ with tab_cur:
         if not curricula:
             st.info('아직 커리큘럼이 없습니다. Claude Code에 `"AI 기초 커리큘럼 만들어줘"`라고 말해보세요.')
         else:
-            # 3열 카드 그리드
-            cols = st.columns(min(3, len(curricula)))
-            for i, entry in enumerate(curricula):
-                with cols[i % 3]:
-                    try:
-                        cur_data = load_curriculum(entry["path"])
-                        n_sessions = len(cur_data.get("sessions", []))
-                        audience = cur_data.get("target_audience", "입문자")
-                        desc = cur_data.get("description", "")
-                        updated = cur_data.get("updated_at", "")[:10]
-                        has_pptx = bool(
-                            cur_data.get("generated", {}).get("pptx_path") and
-                            Path(cur_data["generated"]["pptx_path"]).exists()
-                        )
-                    except Exception:
-                        n_sessions, audience, desc, updated, has_pptx = 0, "-", "", "", False
+            # 각 커리큘럼 메타를 한 번씩 로드해 두고 트랙/순서로 그룹·정렬한다
+            loaded = []
+            for entry in curricula:
+                try:
+                    cur_data = load_curriculum(entry["path"])
+                except Exception:
+                    cur_data = {}
+                loaded.append((entry, cur_data))
 
-                    with st.container(border=True):
-                        st.markdown(f"### {entry['title']}")
-                        st.caption(f"{audience} · {n_sessions}주 과정")
-                        if desc:
-                            st.write(desc[:100] + ("…" if len(desc) > 100 else ""))
-                        st.caption(f"마지막 업데이트: {updated}")
-                        if has_pptx:
-                            st.caption("📎 PPTX 다운로드 가능")
-                        if st.button("열기 →", key=f"open_{entry['id']}",
-                                     use_container_width=True, type="primary"):
-                            st.session_state["cur_selected_id"] = entry["id"]
-                            st.session_state["cur_selected_week"] = 0
-                            st.rerun()
+            id_to_title = {e["id"]: e["title"] for e in curricula}
+
+            def _order_key(item):
+                o = item[1].get("order")
+                return (0, o) if isinstance(o, int) else (1, 0)
+
+            main_items = sorted(
+                [it for it in loaded if it[1].get("track", "main") != "elective"],
+                key=_order_key,
+            )
+            elective_items = [it for it in loaded
+                              if it[1].get("track") == "elective"]
+
+            def _render_cur_card(entry, cur_data):
+                n_sessions = len(cur_data.get("sessions", []))
+                audience = cur_data.get("target_audience", "입문자")
+                desc = cur_data.get("description", "")
+                updated = cur_data.get("updated_at", "")[:10]
+                order = cur_data.get("order")
+                level = cur_data.get("level", "")
+                prereq = cur_data.get("prerequisites", [])
+                try:
+                    has_pptx = bool(
+                        cur_data.get("generated", {}).get("pptx_path") and
+                        Path(cur_data["generated"]["pptx_path"]).exists()
+                    )
+                except Exception:
+                    has_pptx = False
+
+                with st.container(border=True):
+                    if cur_data.get("track") == "elective":
+                        badge = "선택 트랙"
+                    elif isinstance(order, int):
+                        badge = f"{order}단계"
+                    else:
+                        badge = ""
+                    if level:
+                        badge = f"{badge} · {level}" if badge else level
+                    if badge:
+                        st.caption(f"🧭 {badge}")
+                    st.markdown(f"### {entry['title']}")
+                    st.caption(f"{audience} · {n_sessions}주 과정")
+                    if desc:
+                        st.write(desc[:100] + ("…" if len(desc) > 100 else ""))
+                    if prereq:
+                        names = ", ".join(id_to_title.get(p, p) for p in prereq)
+                        st.caption(f"📋 선수: {names}")
+                    st.caption(f"마지막 업데이트: {updated}")
+                    if has_pptx:
+                        st.caption("📎 PPTX 다운로드 가능")
+                    if st.button("열기 →", key=f"open_{entry['id']}",
+                                 use_container_width=True, type="primary"):
+                        st.session_state["cur_selected_id"] = entry["id"]
+                        st.session_state["cur_selected_week"] = 0
+                        st.rerun()
+
+            def _render_grid(items):
+                cols = st.columns(min(3, len(items)))
+                for i, (entry, cur_data) in enumerate(items):
+                    with cols[i % 3]:
+                        _render_cur_card(entry, cur_data)
+
+            if main_items:
+                st.markdown("#### 🎯 메인 학습 경로")
+                st.caption("아래 순서대로 수강하는 것을 권장합니다.")
+                _render_grid(main_items)
+
+            if elective_items:
+                st.divider()
+                st.markdown("#### 🎨 선택 트랙")
+                st.caption("메인 경로와 무관하게 단독으로 들을 수 있는 과정입니다.")
+                _render_grid(elective_items)
 
         st.divider()
         with st.expander("💬 Claude Code 명령어 가이드"):
@@ -731,11 +871,40 @@ with tab_cur:
                 st.session_state["cur_selected_id"] = None
                 st.rerun()
             st.markdown(f"## {curriculum['title']}")
+            order = curriculum.get("order")
+            level = curriculum.get("level", "")
+            if curriculum.get("track") == "elective":
+                pos = "선택 트랙"
+            elif isinstance(order, int):
+                pos = f"메인 경로 {order}단계"
+            else:
+                pos = ""
+            if level:
+                pos = f"{pos} · {level}" if pos else level
             st.caption(
-                f"{curriculum.get('target_audience','입문자')} · "
+                (f"🧭 {pos} · " if pos else "")
+                + f"{curriculum.get('target_audience','입문자')} · "
                 f"{len(sessions)}주 과정 · "
                 f"업데이트: {curriculum.get('updated_at','')[:10]}"
             )
+            _id_title = {c["id"]: c["title"] for c in curricula}
+            _prereq = curriculum.get("prerequisites", [])
+            if _prereq:
+                st.caption("📋 선수 과정: "
+                           + ", ".join(_id_title.get(p, p) for p in _prereq))
+            _next = curriculum.get("next", [])
+            if _next:
+                st.caption("➡️ 다음 권장 과정")
+                ncols = st.columns(min(3, len(_next)))
+                for ni, nid in enumerate(_next):
+                    if nid not in _id_title:
+                        continue
+                    with ncols[ni % len(ncols)]:
+                        if st.button(f"{_id_title[nid]} →", key=f"next_{nid}",
+                                     use_container_width=True):
+                            st.session_state["cur_selected_id"] = nid
+                            st.session_state["cur_selected_week"] = 0
+                            st.rerun()
         with hdr_r:
             pptx_path = curriculum.get("generated", {}).get("pptx_path")
             if pptx_path and Path(pptx_path).exists():
@@ -820,6 +989,17 @@ with tab_cur:
                                     url = ref.get("url", "")
                                     ch = f" · {ref.get('channel')}" if ref.get("channel") else ""
                                     st.markdown(f"- {icon} [{title}]({url}){ch}")
+                            cross = ses.get("cross_refs", [])
+                            if cross:
+                                st.markdown("**🔗 연결 통로**")
+                                for cr in cross:
+                                    where = (f"{cr.get('title','')} {cr.get('week')}주차"
+                                             if cr.get("week") else cr.get("title", ""))
+                                    note = (cr.get("note") or "").strip()
+                                    st.markdown(
+                                        f"- {where} · {cr.get('relation','연결')}"
+                                        + (f" — {note}" if note else "")
+                                    )
                 else:
                     # 특정 주차 교재
                     ses = next((s for s in sessions if s["week"] == selected_week), None)

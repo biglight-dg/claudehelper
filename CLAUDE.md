@@ -40,6 +40,33 @@ streamlit run app.py
 2. Claude Code에 `"PPT 만들어줘"` 또는 `"슬라이드로 만들어줘"` 요청
 3. 아래 **Canva 슬라이드 생성 절차** 참고
 
+### 입력 소스로 지식 모으기 (RSS · 웹검색 · 전문가 SNS)
+
+수집물은 전부 `data/inbox/`로 들어가 위 **기본 정리** 워크플로(교육자 → QA → 큐레이터)를 그대로 탄다.
+워치리스트는 `data/sources.json`, 함수는 `tools/sources.py`. **새 API 키 없이** 동작한다.
+
+```
+"RSS 새로 가져와줘"
+  → sources.pull_all_rss() → 신규 항목만 inbox 적재(중복 자동 방지) → "정리해줘"
+
+"RSS 피드 추가: [URL]"
+  → sources.add_rss(title, url, category)
+
+"[주제] 최신 자료 찾아 정리해줘"
+  → 팀장이 WebSearch / just-scrape 스킬로 수집
+  → sources.save_research(title, url, content) → inbox → 교육자·QA·큐레이터
+
+"[전문가/게시물 링크] 의견 정리해줘"
+  → sources.fetch_social_post(url)로 og 캡션 추출 (인스타·X·링크드인은 일부만 잡힐 수 있음)
+  → 캡션이 부실하면 just-scrape 스킬로 재수집 → inbox → 교육자
+
+"[전문가] 워치리스트에 추가"
+  → sources.add_expert(name, platform, url, note)
+```
+
+- 앱 **📡 소스** 탭에서도 RSS/전문가 등록·새로고침·게시물 수집 가능
+- 인스타/X **전체 크롤링은 하지 않는다**(ToS·차단 위험). 고른 전문가 게시물 링크만 추적한다.
+
 ### 유튜브 영상을 커리큘럼 참고자료로 넣기
 
 1. Claude Code에 `"이 유튜브 [링크] 커리큘럼에 넣어줘"` 요청
@@ -161,11 +188,13 @@ Claude Code가 교육자 역할로 Canva MCP를 사용해 슬라이드를 생성
 | `agents/qa.py` | QA: 난이도·정확성·일관성 검토 |
 | `agents/curriculum.py` | 커리큘럼: 생성·관리, 슬라이드 데이터 빌드 |
 | `tools/reader.py` | inbox 파일 읽기, URL → 텍스트 추출, 유튜브 메타(`fetch_youtube_meta`) |
+| `tools/sources.py` | 입력 소스 커넥터: RSS(`pull_all_rss`)·전문가 SNS(`fetch_social_post`)·웹검색 적재(`save_research`) |
 | `tools/file_tools.py` | DB 로드/저장, 지식 파일 저장 |
 | `tools/curriculum_tools.py` | 커리큘럼 CRUD, 슬라이드 JSON 저장, 세션 참고자료(`add_session_reference`) |
 | `tools/aux_tools.py` | 보조 프로그램 카탈로그 CRUD (전역) |
 | `tools/pptx_maker.py` | python-pptx 기반 PPT 생성 (흑백, Pretendard) |
 | `data/aux_programs.json` | 보조 프로그램(확장·단축키·툴) 전역 카탈로그 |
+| `data/sources.json` | 입력 소스 워치리스트(RSS·전문가 SNS) + 수집 이력(`seen`) |
 | `data/inbox/` | 사용자가 넣은 원본 문서 |
 | `data/knowledge/` | 교육자가 정리한 Markdown |
 | `data/knowledge_db.json` | 지식 메타데이터 인덱스 |

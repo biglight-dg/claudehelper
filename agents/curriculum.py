@@ -7,7 +7,9 @@ build_doc_content()  → 교재용 Markdown (완전한 문장, 교재 어투)
 import re
 from pathlib import Path
 
-from tools.curriculum_tools import build_markdown_doc, load_curriculum, save_slides
+from tools.curriculum_tools import (
+    build_markdown_doc, load_curriculum, load_curriculum_db, save_slides,
+)
 
 SYSTEM_PROMPT = """당신은 AI 교육팀의 커리큘럼 담당자입니다.
 
@@ -65,12 +67,16 @@ def build_slides_data(curriculum: dict) -> list[dict]:
     slide_num = 1
     seen_tables: set[tuple] = set()  # (file_path, table_title) 중복 방지
 
-    # 타이틀
+    # 타이틀 — 부제 앞에 학습 경로(순서·선수) 한 줄을 덧붙인다
+    subtitle = curriculum.get("description", "")
+    path_line = _learning_path_line(curriculum)
+    if path_line:
+        subtitle = f"{path_line}\n{subtitle}" if subtitle else path_line
     slides.append({
         "slide_number": slide_num,
         "type": "title",
         "title": curriculum["title"],
-        "subtitle": curriculum.get("description", ""),
+        "subtitle": subtitle,
     })
     slide_num += 1
 
@@ -117,6 +123,24 @@ def build_slides_data(curriculum: dict) -> list[dict]:
             "section": f"{ses['week']}주차: {ses['title']}",
         })
         slide_num += 1
+
+        # 개념 설명 슬라이드 (선택) — 용어를 비개발 실무자용으로 풀어 설명 + 비유.
+        # 세션 JSON에 concepts 필드가 있을 때만 생성(없으면 건너뜀, 하위 호환).
+        for con in ses.get("concepts", [])[:3]:
+            term = _clean_inline_md(con.get("term", "")).strip()
+            explain = _clean_inline_md(con.get("explain", "")).strip()
+            if not term or not explain:
+                continue
+            slides.append({
+                "slide_number": slide_num,
+                "type": "concept",
+                "week": week_no,
+                "section": week_label,
+                "term": term,
+                "explain": explain,
+                "analogy": _clean_inline_md(con.get("analogy", "")).strip(),
+            })
+            slide_num += 1
 
         # 지식 파일에서 표 미리 수집 (세션당 최대 2개) — flow 핵심개념에도 재사용
         session_tables: list[dict] = []
@@ -208,20 +232,57 @@ def build_slides_data(curriculum: dict) -> list[dict]:
 
 # ── 헬퍼 함수 ──────────────────────────────────────────────────────
 
-def _flow_item(text: str, max_len: int = 26) -> str:
+def _learning_path_line(curriculum: dict) -> str:
+    """타이틀 슬라이드 부제에 넣을 학습 경로 한 줄(순서·단계·선수)."""
+    track = curriculum.get("track", "main")
+    order = curriculum.get("order")
+    level = curriculum.get("level", "")
+    prereq = curriculum.get("prerequisites", [])
+
+    if track == "elective":
+        head = "독립 선택 트랙"
+    elif order:
+        head = f"학습 순서 {order}단계"
+    else:
+        head = ""
+    if level:
+        head = f"{head} · {level}" if head else level
+
+    if prereq:
+        id_to_title = {c["id"]: c["title"]
+                       for c in load_curriculum_db().get("curricula", [])}
+        names = ", ".join(id_to_title.get(pid, pid) for pid in prereq)
+        head = f"{head} · 선수: {names}" if head else f"선수: {names}"
+    return head
+
+
+def _truncate_at_word(text: str, max_len: int) -> str:
+    """max_len을 넘으면 마지막 어절 경계에서 자르고 …를 붙인다.
+
+    단어 중간에서 끊어 의미가 깨지는 것을 막는다(공백이 없으면 그대로 절단).
+    """
+    text = text.strip()
+    if len(text) <= max_len:
+        return text
+    cut = text[:max_len]
+    sp = cut.rfind(" ")
+    if sp >= max_len * 0.6:  # 어절 경계가 너무 앞이 아니면 그 지점에서 자른다
+        cut = cut[:sp]
+    return cut.rstrip(" ,·-—") + "…"
+
+
+def _flow_item(text: str, max_len: int = 34) -> str:
     """구조도(flow) 박스에 들어갈 짧은 키워드로 정리한다.
 
     인라인 마크다운 제거 후, 괄호·구분기호 앞부분만 남겨 명사형 키워드로 줄인다.
+    엔진이 자동 줄바꿈/축소하므로 과거보다 넉넉히 둔다.
     """
     text = _clean_inline_md(text)
     for sep in (" — ", " – ", " (", "(", " · ", ": ", "—"):
         if sep in text:
             text = text.split(sep)[0]
             break
-    text = text.strip()
-    if len(text) > max_len:
-        text = text[:max_len - 1].rstrip() + "…"
-    return text
+    return _truncate_at_word(text, max_len)
 
 
 def _clean_inline_md(text: str) -> str:
@@ -249,10 +310,8 @@ def _to_ppt_bullet(text: str) -> str:
     for prefix in ('이번 주차에서는 ', '학습자는 ', '수강생은 ', '학생은 '):
         if text.startswith(prefix):
             text = text[len(prefix):]
-    # 너무 길 때만 줄임 (두 줄 분량까지 허용)
-    if len(text) > 60:
-        text = text[:58].rstrip() + '…'
-    return text.strip()
+    # 엔진이 자동 줄바꿈/축소하므로 넉넉히 허용(약 3줄 분량), 넘치면 어절 경계에서.
+    return _truncate_at_word(text.strip(), 90)
 
 
 def _extract_tables_from_md(text: str) -> list[dict]:
