@@ -1,113 +1,96 @@
 # AI 교육팀 프로젝트 — Handoff 문서
 
-> 마지막 업데이트: 2026-06-12
+> 마지막 업데이트: 2026-06-20
+
+> 세부 작동 규칙·워크플로는 항상 `CLAUDE.md`가 최종 기준. 이 문서는 세션 시작 시 빠른 현황 파악용 요약이다.
 
 ---
 
-## 🔴 [이어서 할 작업] 커리큘럼 6종 확장 — 중단 지점
+## 🟢 현재 상태
 
-**사용자에게 바로 안내할 것:** "지난번 커리큘럼 확장 작업을 이어서 진행할까요?" 라고 먼저 물어보기.
-계획서: `C:\Users\chris\.claude\plans\reflective-swimming-fox.md`
-
-### ✅ 완료된 부분
-- **지식 파일 18개 전부 작성 완료** (`data/knowledge/20260612_*.md`) + `data/knowledge_db.json` 등록 완료
-  - ② 6개(AI도구지형도/마크다운/터미널/ClaudeCode·Cowork/커스텀AI/Agent·Hook)
-  - ③ 3개(프롬프트/업무마크다운/토큰·컨텍스트)
-  - ④ 6개(클라이언트·서버/API/HTML·CSS/언어/Git·GitHub/용어사전)
-  - ⑤ 3개(환각/저작권·개인정보/회사보안)
-  - ⑥ 5개(자동화사고법/MCP/노코드/Agent설계/사례모음)
-  - ① 1개(이미지·영상 트러블슈팅)
-- **커리큘럼 ② "AI 업무 기초"** JSON 생성 + `curriculum_db.json` 등록 + 빌드 검증 완료(6세션, 슬라이드 29장)
-
-### ⏳ 남은 작업 (여기서 재개)
-1. 커리큘럼 JSON 생성 4개 — **③ AI 멋지게 사용하기(3주)**, **④ 개발 배경 지식(6주)**, **⑤ AI 안전·저작권·보안(3주)**, **⑥ AI 업무 자동화 실전(5주)**. 각각 세션의 `knowledge_refs`에 위 지식파일 연결 + `curriculum_db.json` 등록.
-2. **① 기존 "이미지/동영상 제작 기초" 강화** — 5개 세션 `notes`(강사노트) 채우기 + 트러블슈팅 파일(`20260612_AI 이미지 영상 실전 팁과 트러블슈팅.md`)을 W2·W4·W5에 연결 + 5주차 자기점검 추가.
-3. 전체 로드/빌드 검증(`load_curriculum`→`build_markdown_doc`→`build_slides_data`, 참조 누락 0 확인).
-4. (선택) 슬라이드·PPTX 생성.
-
-### 작업 방식(확정 사항)
-- 대상: **비개발 실무자**, 톤: 친근+비유, QA형식(이모지섹션·비유·비교표·핵심교훈·출처) 준수
-- 콘텐츠는 Claude가 전부 작성 → 사용자가 나중에 자료 모아 검토/업데이트
-- "cowork" = **Claude Cowork**. Cowork/GPTs/Gem/요금 등 변동잦은 부분은 `⚠️ 검토 요청` 표시해둠
-- 커리큘럼 추가 = ①지식.md ②knowledge_db.json ③커리큘럼.json ④curriculum_db.json 4개 레이어. ② "AI 업무 기초.json"을 템플릿으로 참고.
-- 검증 시 파이썬: `C:\Users\chris\.cache\codex-runtimes\codex-primary-runtime\dependencies\python\python.exe`, 한글출력 시 `$env:PYTHONIOENCODING="utf-8"`, here-string 한글 깨지므로 임시 .py 파일로 실행
+진행 중인 중단 작업 없음. 일상 요청(정리·뉴스·커리큘럼·PPT 등)을 바로 받으면 된다.
 
 ---
 
 ## 프로젝트 한 줄 요약
 
-최신 AI 트렌드 수집 + 사용자가 요청하는 기본 개념/인사이트 정리 → 나만의 AI 지식 베이스를 자동으로 쌓아주는 멀티 에이전트 시스템. `C:\Users\chris\claudehelper\` 에 위치.
+**외부 API 없는 로컬 지식 관리 도구.** Claude Code 세션이 **팀장** 역할로 에이전트들을 오케스트레이션해, 사용자가 모은 자료를 교육 문서·슬라이드·커리큘럼으로 정리하고 AI 지식 베이스를 쌓는다.
+위치: `C:\Users\chris\Claude\Projects\claudehelper\`
 
 ---
 
-## 현재 완성된 것 (Phase 1 완료)
+## 아키텍처 (현재)
 
-### 에이전트 5개
+Claude Code = 팀장. Gemini/외부 LLM API 의존 없음(과거 구조에서 전환됨).
+
 | 에이전트 | 파일 | 역할 |
 |----------|------|------|
-| 팀장 | `agents/team_lead.py` | 사용자 소통 + Gemini function calling 오케스트레이션 |
-| 리서처 | `agents/researcher.py` | Google Custom Search로 최신 AI 뉴스 수집 |
-| 교육자 | `agents/educator.py` | 뉴스/개념을 교육 자료(doc/card/slide)로 변환 |
-| QA | `agents/qa.py` | 난이도·정확성·일관성 3단계 품질 검토 |
-| 큐레이터 | `agents/curator.py` | knowledge_db.json에 자료 저장/검색 |
-
-### UI
-- `app.py` — Streamlit 브라우저 UI (localhost:8501)
-- 사이드바: 빠른 시작 버튼 6개 + 저장된 자료 목록
-- 처리 중 어떤 에이전트가 일하는지 실시간 표시
-
-### 데이터
-- `data/knowledge_db.json` — AI 툴 DB(5개 시드) + 자료 인덱스
-- `data/outputs/` — 생성된 Markdown 교육 자료 저장
+| 팀장 | `agents/team_lead.py` | 요청 분석 + 작업 라우팅 (Claude Code 본인) |
+| 교육자 | `agents/educator.py` | 원자료 → 교육 문서/슬라이드 변환 |
+| 큐레이터 | `agents/curator.py` | 태깅, DB 저장/검색 |
+| QA | `agents/qa.py` | 난이도·정확성·일관성 3단계 검토 (21/30점 이상 통과) |
+| 커리큘럼 | `agents/curriculum.py` | 커리큘럼 생성·관리, 슬라이드 데이터 빌드 |
+| ~~리서처~~ | (사용자가 담당) | inbox에 직접 자료 입력 |
 
 ---
 
-## 기술 스택 및 주요 결정사항
+## 주요 기능
 
-| 항목 | 결정 | 이유 |
-|------|------|------|
-| AI API | Gemini 2.0 Flash (`google-genai`) | 무료 (1,500회/일) — Anthropic API 대신 선택 |
-| 웹 검색 | Google Custom Search API | 무료 100회/일 |
-| UI | Streamlit | 빠른 구축, 채팅 UI 내장 |
-| 저장 | 로컬 JSON + Markdown | 단순성 우선 |
-| 팀장 모델 | gemini-2.0-flash | function calling 지원 |
-
----
-
-## 환경 변수 (.env)
-
-```
-GEMINI_API_KEY=AQ.Ab8R...   ← Google AI Studio (aistudio.google.com/apikey)
-GOOGLE_API_KEY=AIzaSy...    ← Google Cloud Console Custom Search용
-GOOGLE_CSE_ID=173ed...      ← Programmable Search Engine ID
-```
+- **기본 정리**: inbox 자료 → 교육자 문서화 → QA → 큐레이터 저장 (`"inbox 정리해줘"`)
+- **입력 소스**: RSS 워치리스트 · 웹검색 · 전문가 SNS/유튜브 (`tools/sources.py`). 유튜브 전문가는 등록 시 자동 RSS화.
+- **뉴스 스트림 + 주간 브리핑**: `tools/news.py`. inbox와 분리된 `data/news.json` 스트림. 뉴닉 스타일 주간 통합 요약.
+- **커리큘럼 관리**: 명령 한 번으로 강(N강) 추가·수정·삭제, 슬라이드 재생성. `/커리큘럼` 슬래시 커맨드. (용어 '주차→강' 전환, 내부 `week` 필드는 유지) + 특별 강의 special 트랙 8종.
+- **유튜브 → 커리큘럼 참고자료**: `reader.fetch_youtube_meta`로 제목/설명만 추출 후 연결.
+- **보조 프로그램 카탈로그**: 확장·단축키·툴 등록 (`tools/aux_tools.py`).
+- **PPT 슬라이드**: Canva MCP 또는 `tools/pptx_maker.py`(python-pptx, 흑백, Pretendard).
 
 ---
 
 ## 실행 방법
 
-```powershell
-# Streamlit UI (브라우저)
-C:\Users\chris\.cache\codex-runtimes\codex-primary-runtime\dependencies\python\python.exe -m streamlit run C:\Users\chris\claudehelper\app.py
-
-# 터미널 CLI (대안)
-C:\Users\chris\.cache\codex-runtimes\codex-primary-runtime\dependencies\python\python.exe C:\Users\chris\claudehelper\main.py
+```bash
+pip install -r requirements.txt
+streamlit run app.py
 ```
 
----
-
-## 다음 작업 (Phase 2 예정)
-
-- [ ] RSS 피드 연결 (HuggingFace, arXiv)
-- [ ] Reddit API 연동 (r/MachineLearning 등)
-- [ ] 스케줄러 에이전트 (주간 학습 플랜 자동 생성)
-- [ ] 번역/로컬라이저 에이전트 (영문 원자료 한국어화)
-- [ ] Canva MCP 연동으로 슬라이드 실제 생성
+스크립트/검증/PPTX 실행용 파이썬은 codex 런타임 사용 (PATH python엔 의존성 없음):
+```
+C:\Users\chris\.cache\codex-runtimes\codex-primary-runtime\dependencies\python\python.exe
+```
+한글 출력 시 `$env:PYTHONIOENCODING="utf-8"`, here-string 한글 깨지면 임시 .py 파일로 실행.
 
 ---
 
-## 알려진 이슈 / 주의사항
+## 데이터 · 경로
 
-- Python이 PATH에 없어서 항상 전체 경로 사용 필요
-- `.env` 파일을 `.env.example`로 실수로 수정하는 일 없도록 주의
-- Google Custom Search 무료 한도: 하루 100회
+- `data/`는 **정션** → `G:\공유 드라이브\Chapterkorean-claude-cowork\claudehelper\data` (팀 협업용 Google 공유 드라이브). 실제 파일은 클라우드에 있음.
+- 주요 데이터: `data/inbox/`(원본), `data/knowledge/`(정리본 .md), `data/knowledge_db.json`(인덱스), `data/curricula/`(커리큘럼 JSON+슬라이드), `data/news.json`, `data/sources.json`, `data/aux_programs.json`, `data/outputs/`(PPTX).
+- GitHub private 버전관리: `chapterkorean/claudehelper` (`.env` 보호).
+
+---
+
+## 자동화 (Windows 작업 스케줄러, 모두 새 경로로 등록됨)
+
+| 작업 | 시각 | 스크립트 |
+|------|------|----------|
+| `AI교육팀_전문가피드동기화` | 매주 월 09:15 | `tools/expert_feed_sync.ps1` (유튜브 전문가 RSS 백필) |
+| `AI교육팀_주간뉴스브리핑` | 매주 월 09:23 | `tools/weekly_digest.ps1` (`claude -p` 무인 브리핑) |
+| `AI교육팀_시트동기화` | 매주 월 09:40 | `tools/sheets_sync.ps1` (커리큘럼·지식·소스 → Google Sheets) |
+
+로그: `C:\Users\chris\.claude\weekly_digest.log`
+
+---
+
+## 공유 / 배포
+
+- 지인 10명 공유용 비밀번호 게이트 + 역할 가드(손님 = 보기·입력만), Cloudflare Tunnel 호스팅.
+- 배포용 스킬: `teach-me-a-lesson`(초급자용 친절 설명, `/tl-*` 커맨드).
+
+---
+
+## 주의사항
+
+- Python이 PATH에 없음 → 항상 codex 런타임 전체 경로 사용.
+- `.env`를 `.env.example`로 실수로 덮어쓰지 않도록 주의.
+- 인스타/X 전체 크롤링 금지(ToS·차단 위험). 고른 전문가 게시물 링크만 추적.
+- 세션 시작 시 이 문서는 `scripts/handoff_hook.ps1` 훅이 자동 출력한다.

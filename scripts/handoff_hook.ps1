@@ -3,7 +3,7 @@ $OutputEncoding = [System.Text.Encoding]::UTF8
 [Console]::OutputEncoding = [System.Text.Encoding]::UTF8
 
 $markerFile = "$env:TEMP\claude_handoff_$PID.marker"
-$handoffPath = "C:\Users\chris\claudehelper\handoff.md"
+$handoffPath = "C:\Users\chris\Claude\Projects\claudehelper\handoff.md"
 
 if (-not (Test-Path $markerFile)) {
     New-Item -Path $markerFile -ItemType File -Force | Out-Null
