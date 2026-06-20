@@ -9,7 +9,7 @@ $ErrorActionPreference = "Continue"
 $OutputEncoding = [System.Text.Encoding]::UTF8
 $env:PYTHONIOENCODING = "utf-8"
 
-$proj = "C:\Users\chris\claudehelper"
+$proj = "C:\Users\chris\Claude\Projects\claudehelper"
 # codex runtime python where claudehelper deps are installed
 $py  = "C:\Users\chris\.cache\codex-runtimes\codex-primary-runtime\dependencies\python\python.exe"
 $log = "C:\Users\chris\.claude\expert_feed_sync.log"

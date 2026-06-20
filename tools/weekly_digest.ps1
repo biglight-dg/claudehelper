@@ -4,7 +4,7 @@ $ErrorActionPreference = "Continue"
 # claude는 UTF-8로 출력하므로 콘솔/파이프 인코딩을 UTF-8로 맞춰 로그 깨짐 방지
 [Console]::OutputEncoding = [System.Text.Encoding]::UTF8
 $OutputEncoding = [System.Text.Encoding]::UTF8
-$proj = "C:\Users\chris\claudehelper"
+$proj = "C:\Users\chris\Claude\Projects\claudehelper"
 $claude = "C:\Users\chris\.local\bin\claude.exe"
 $log = "C:\Users\chris\.claude\weekly_digest.log"
 
