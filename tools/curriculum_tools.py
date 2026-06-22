@@ -147,6 +147,122 @@ def get_session(curriculum: dict, week: int) -> dict | None:
     return next((s for s in curriculum["sessions"] if s["week"] == week), None)
 
 
+def add_session(curriculum: dict, session: dict) -> None:
+    """세션을 추가하고 week 순으로 정렬한다."""
+    curriculum.setdefault("sessions", []).append(session)
+    curriculum["sessions"].sort(key=lambda s: s["week"])
+
+
+def remove_session(curriculum: dict, week: int, renumber: bool = True) -> bool:
+    """해당 week 세션을 제거한다. renumber=True(기본)면 뒤 강의 week를 1씩 당긴다.
+
+    반환: 제거 성공 여부. 저장은 호출부에서 save_curriculum()으로 한다.
+    """
+    sessions = curriculum.get("sessions", [])
+    target = next((s for s in sessions if s["week"] == week), None)
+    if target is None:
+        return False
+    sessions.remove(target)
+    if renumber:
+        for s in sessions:
+            if s["week"] > week:
+                s["week"] -= 1
+    sessions.sort(key=lambda s: s["week"])
+    return True
+
+
+# 강을 쪼갤 때 새 강으로 재배분되는 리스트형 필드(교재 .md는 건드리지 않음)
+_SPLIT_FIELDS = ("knowledge_refs", "objectives", "concepts",
+                 "activities", "references", "cross_refs")
+
+
+def split_session(curriculum: dict, week: int, parts: list[dict]) -> dict:
+    """한 강(week)을 여러 강으로 분할한다.
+
+    교재 본문(.md 파일)은 절대 건드리지 않고, 강의 메타 필드만 parts 명세대로
+    재배분한다. 첫 part는 원본 week 번호를 유지하고, 이후 part는 week+1,
+    week+2…를 갖는다. 원본보다 뒤에 있던 강들은 (len(parts)-1)만큼 week가
+    뒤로 밀린다. 원본의 part(파트명)·duration은 명시하지 않은 새 강에 상속된다.
+
+    parts[i] 예: {"title": "...", "knowledge_refs": [...], "objectives": [...],
+                  "concepts": [...], "activities": [...], "references": [...],
+                  "cross_refs": [...], "duration": "30분", "notes": "..."}
+    title은 필수. 생략한 필드는 빈 값으로 둔다. 저장은 호출부에서
+    save_curriculum() + 슬라이드 재생성으로 한다.
+
+    반환: {"new_weeks": [int...], "shift": int, "cross_ref_warnings": [str...]}
+    (cross_ref_warnings는 week가 밀려 어긋날 수 있는 참조 경고 — 자동 수정 안 함)
+    """
+    if len(parts) < 2:
+        raise ValueError("split_session: parts는 2개 이상이어야 합니다(분할 의미).")
+    sessions = curriculum.get("sessions", [])
+    origin = next((s for s in sessions if s["week"] == week), None)
+    if origin is None:
+        raise ValueError(f"{week}강 세션을 찾을 수 없습니다.")
+
+    shift = len(parts) - 1
+    inherited_part = origin.get("part")
+    inherited_duration = origin.get("duration", "60분")
+
+    # 1) 원본보다 뒤 강의 week를 shift만큼 뒤로 민다
+    for s in sessions:
+        if s["week"] > week:
+            s["week"] += shift
+    # 2) 원본 제거
+    sessions.remove(origin)
+
+    # 3) 각 part를 새 강으로 생성 (교재 .md는 knowledge_refs 경로만 재배분)
+    new_weeks = []
+    for idx, part in enumerate(parts):
+        w = week + idx
+        title = (part.get("title") or "").strip()
+        if not title:
+            raise ValueError(f"parts[{idx}]에 title이 필요합니다.")
+        ses = new_session(week=w, title=title,
+                          objectives=list(part.get("objectives", [])),
+                          duration=part.get("duration", inherited_duration))
+        for f in _SPLIT_FIELDS:
+            if f == "objectives":
+                continue  # 이미 new_session에 전달됨
+            ses[f] = list(part.get(f, []))
+        ses["notes"] = part.get("notes", "")
+        if inherited_part:
+            ses["part"] = inherited_part
+        add_session(curriculum, ses)
+        new_weeks.append(w)
+
+    warnings = _split_cross_ref_warnings(curriculum, week, shift)
+    return {"new_weeks": new_weeks, "shift": shift, "cross_ref_warnings": warnings}
+
+
+def _split_cross_ref_warnings(curriculum: dict, week: int, shift: int) -> list[str]:
+    """분할로 week가 밀려 참조가 어긋날 수 있는 cross_refs를 경고 문자열로 모은다.
+
+    이 커리큘럼(id)을 가리키며 원본 week보다 뒤(week 큰)를 가리키는 cross_ref는
+    분할 후 한 강(=shift)만큼 어긋난다. 자동 수정하지 않고 호출자에게 알린다.
+    """
+    cid = curriculum.get("id")
+    warnings: list[str] = []
+    if not cid:
+        return warnings
+    for entry in load_curriculum_db().get("curricula", []):
+        try:
+            other = load_curriculum(entry["path"])
+        except Exception:
+            continue
+        for ses in other.get("sessions", []):
+            for cr in ses.get("cross_refs", []):
+                if (cr.get("curriculum_id") == cid
+                        and isinstance(cr.get("week"), int)
+                        and cr["week"] > week):
+                    warnings.append(
+                        f"[{other.get('title')}] {ses.get('week')}강의 연결 통로가 "
+                        f"이 커리큘럼 {cr['week']}강을 가리킵니다 → 분할 후 "
+                        f"{cr['week'] + shift}강으로 조정해야 맞습니다."
+                    )
+    return warnings
+
+
 def add_session_reference(curriculum: dict, week: int, ref: dict) -> bool:
     """특정 강 세션의 references 리스트에 외부 참고자료(유튜브·링크)를 추가한다.
 

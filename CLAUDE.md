@@ -186,8 +186,17 @@ Claude Code가 교육자 역할로 Canva MCP를 사용해 슬라이드를 생성
   → data/curricula/{title}.json 생성 + curriculum_db.json 인덱스 등록
 
 "[N]강 세션 추가: [제목]"
-  → new_session(week=N, title) + curriculum["sessions"].append() + save_curriculum()
+  → new_session(week=N, title) + add_session(curriculum, ses) + save_curriculum()
   (※ 내부 week 필드/파라미터는 그대로, 사용자 표기만 "N강")
+
+"[N]강 둘로/여러 개로 쪼개줘"   (한 강이 너무 길 때 — 교재 본문은 그대로!)
+  1. 원본 강의 knowledge_refs/objectives/concepts/activities를 보고 어떻게
+     나눌지 parts 명세를 만든다 (교재 .md는 절대 안 줄이고 경로만 재배분)
+  2. split_session(curriculum, week=N, parts=[{title, knowledge_refs, objectives,
+     concepts, activities, ...}, ...])
+     → 뒤 강 week 자동 +shift, 원본 part(파트명)·duration 상속
+     → 반환 dict의 cross_ref_warnings가 있으면 사용자에게 알리고 해당 참조 조정
+  3. save_curriculum() → "슬라이드 업데이트 필요" 안내(build_slides_data 재생성)
 
 "[N]강에 [파일명] 연결해줘"
   → data/knowledge/ 에서 파일 검색 → knowledge_refs에 경로 추가 + save_curriculum()
@@ -199,10 +208,10 @@ Claude Code가 교육자 역할로 Canva MCP를 사용해 슬라이드를 생성
   → activities 리스트에 추가 + save_curriculum()
 
 "[N]강 삭제해줘"
-  → sessions에서 해당 week 제거 + save_curriculum()
+  → remove_session(curriculum, week=N) (뒤 강 week 자동 -1) + save_curriculum()
 
 "커리큘럼 슬라이드 업데이트해줘"
-  → build_slides_data(curriculum) → save_slides() → PptxMaker로 PPTX 재생성
+  → build_slides_data(curriculum) → save_slides() → 화면 슬라이드 JSON 재생성 (PPTX 생성 안 함)
   → curriculum.generated 업데이트 + save_curriculum()
 
 "커리큘럼 목록 보여줘"
@@ -217,6 +226,9 @@ Claude Code가 교육자 역할로 Canva MCP를 사용해 슬라이드를 생성
 1. 매 수정 후 **반드시 `save_curriculum(curriculum)` 호출** — updated_at 자동 갱신
 2. 변경 내용 요약 출력
 3. 슬라이드가 커리큘럼 수정 후 재생성 안 됐으면 "슬라이드 업데이트 필요" 안내
+4. **강 분량 기준**: 한 강이 슬라이드 6~9장 / 교재 H3 소제목 5~6개를 넘으면 분할을 검토한다.
+   분할 시 교재 본문(.md)은 한 글자도 줄이지 않고 강 사이에 **재배분만** 한다(`split_session`).
+   강을 잘게 나누면 강당 슬라이드·교재가 짧아져 학습 화면에서 슬라이드와 교재를 1:1로 대조하기 쉬워진다.
 
 ---
 

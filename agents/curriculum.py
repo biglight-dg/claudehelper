@@ -43,7 +43,7 @@ SYSTEM_PROMPT = """당신은 AI 교육팀의 커리큘럼 담당자입니다.
     → sessions에서 해당 week 제거 + save_curriculum()
 
   "커리큘럼 슬라이드 업데이트해줘"
-    → build_slides_data(curriculum) → save_slides() → PptxMaker로 PPTX 재생성
+    → build_slides_data(curriculum) → save_slides() → 화면 슬라이드 JSON 재생성 (PPTX 생성 안 함)
 
   "커리큘럼 목록 보여줘"
     → load_curriculum_db() 출력

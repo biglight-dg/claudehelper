@@ -262,30 +262,35 @@ if _dark:
     st.markdown(_DARK_CSS, unsafe_allow_html=True)
 
 
-# 16:9 래퍼: aspect-ratio로 비율 고정, 내부 절대 위치
-WRAP_OPEN = (
-    '<div style="width:100%;aspect-ratio:16/9;position:relative;'
-    'overflow:hidden;border-radius:10px;box-shadow:0 2px 8px rgba(0,0,0,0.12);">'
-    '<div style="position:absolute;inset:0;display:flex;flex-direction:column;">'
-)
-WRAP_CLOSE = "</div></div>"
+# 슬라이드 가상 캔버스 크기(px). 폰트·박스 모두 이 캔버스 기준 절대값으로
+# 그린 뒤, 렌더 단계에서 transform:scale로 컨테이너 폭에 맞춘다.
+# 세로 4:5(1280×1600) — 교재 옆 좁은 칸을 세로로 꽉 채워 더 잘 보이게 한다.
+CANVAS_W = 1280
+CANVAS_H = 1600
 
 
 def _slide_inner_html(slide: dict) -> str:
-    """슬라이드 타입별 내부 패널 HTML(래퍼 제외)을 문자열로 반환한다."""
+    """슬라이드 타입별 내부 패널 HTML(래퍼 제외)을 문자열로 반환한다.
+
+    폰트는 1280×1600(세로 4:5) 고정 가상 캔버스 기준의 절대 px다. 렌더 단계에서
+    캔버스 전체를 transform:scale로 컨테이너 폭에 맞추므로, 폰트와 박스가
+    항상 같은 비율로 줄어 PowerPoint처럼 절대 박스를 넘치지 않는다.
+    """
     stype = slide.get("type", "content")
 
+    # 폰트는 1280×1600(세로 4:5) 캔버스 기준 절대 px. 세로 공간이 넓으므로
+    # 폰트를 큼직하게 잡고 본문을 세로로 고르게 분배해 여백을 최소화한다.
     if stype == "title":
         inner = (
             '<div style="background:#111;width:100%;height:100%;display:flex;'
-            'flex-direction:column;align-items:center;justify-content:center;padding:6%;">'
-            f'<div style="font-size:clamp(2rem,4vw,3.4rem);font-weight:800;'
-            f'color:#fff;text-align:center;line-height:1.3;margin-bottom:1.2rem;">'
+            'flex-direction:column;align-items:center;justify-content:center;padding:8% 7%;">'
+            '<div style="font-size:68px;font-weight:800;'
+            f'color:#fff;text-align:center;line-height:1.3;margin-bottom:1.6rem;">'
             f'{slide.get("title","")}</div>'
-            '<div style="width:100px;height:3px;background:#555;margin-bottom:1.2rem;"></div>'
-            f'<div style="font-size:clamp(1rem,1.8vw,1.6rem);color:#aaa;text-align:center;">'
+            '<div style="width:140px;height:4px;background:#555;margin-bottom:1.6rem;"></div>'
+            '<div style="font-size:34px;color:#bbb;text-align:center;line-height:1.5;">'
             f'{slide.get("subtitle","")}</div>'
-            '<div style="position:absolute;bottom:4%;right:4%;font-size:0.9rem;color:#555;">AI 교육팀</div>'
+            '<div style="position:absolute;bottom:4%;right:5%;font-size:22px;color:#555;">AI 교육팀</div>'
             '</div>'
         )
         return inner
@@ -294,14 +299,14 @@ def _slide_inner_html(slide: dict) -> str:
         weeks = slide.get("weeks", "")
         inner = (
             '<div style="background:#111;width:100%;height:100%;display:flex;'
-            'flex-direction:column;align-items:center;justify-content:center;padding:6%;">'
-            f'<div style="font-size:clamp(2.6rem,6vw,4.6rem);font-weight:800;'
-            f'color:#fff;text-align:center;letter-spacing:0.05em;margin-bottom:1rem;">'
+            'flex-direction:column;align-items:center;justify-content:center;padding:8% 7%;">'
+            '<div style="font-size:92px;font-weight:800;'
+            f'color:#fff;text-align:center;letter-spacing:0.05em;margin-bottom:1.4rem;">'
             f'{slide.get("label","")}</div>'
-            '<div style="width:100px;height:3px;background:#555;margin-bottom:1rem;"></div>'
-            f'<div style="font-size:clamp(1.2rem,2.4vw,2.2rem);color:#ddd;text-align:center;'
-            f'line-height:1.3;margin-bottom:0.6rem;">{slide.get("title","")}</div>'
-            f'<div style="font-size:clamp(0.95rem,1.6vw,1.4rem);color:#888;">{weeks}</div>'
+            '<div style="width:140px;height:4px;background:#555;margin-bottom:1.4rem;"></div>'
+            '<div style="font-size:44px;color:#ddd;text-align:center;'
+            f'line-height:1.35;margin-bottom:1rem;">{slide.get("title","")}</div>'
+            f'<div style="font-size:30px;color:#888;">{weeks}</div>'
             '</div>'
         )
         return inner
@@ -309,13 +314,13 @@ def _slide_inner_html(slide: dict) -> str:
     elif stype == "divider":
         inner = (
             '<div style="background:#fff;width:100%;height:100%;display:flex;'
-            'align-items:center;padding:5% 7%;">'
-            '<div style="width:8px;height:62%;background:#000;border-radius:4px;'
-            'margin-right:5%;flex-shrink:0;"></div>'
+            'align-items:center;padding:7% 8%;">'
+            '<div style="width:12px;height:55%;background:#000;border-radius:6px;'
+            'margin-right:6%;flex-shrink:0;"></div>'
             '<div>'
-            f'<div style="font-size:clamp(3.5rem,9vw,7rem);font-weight:800;color:#e8e8e8;'
-            f'line-height:1;margin-bottom:0.3rem;">{slide.get("number","")}</div>'
-            f'<div style="font-size:clamp(1.6rem,3.4vw,2.8rem);font-weight:700;color:#111;">'
+            '<div style="font-size:170px;font-weight:800;color:#e8e8e8;'
+            f'line-height:0.95;margin-bottom:0.6rem;">{slide.get("number","")}</div>'
+            '<div style="font-size:58px;font-weight:700;color:#111;line-height:1.2;">'
             f'{slide.get("section","")}</div>'
             '</div></div>'
         )
@@ -324,22 +329,44 @@ def _slide_inner_html(slide: dict) -> str:
     elif stype == "content":
         bullets_html = "".join(
             f'<div style="display:flex;align-items:flex-start;">'
-            f'<span style="color:#555;margin-right:0.7rem;flex-shrink:0;'
-            f'font-size:clamp(1.15rem,2.7vw,2.2rem);line-height:1.3;">▪</span>'
-            f'<span style="font-size:clamp(1.15rem,2.7vw,2.2rem);color:#222;line-height:1.3;">{b}</span>'
+            f'<span style="color:#555;margin-right:0.8rem;flex-shrink:0;'
+            f'font-size:40px;line-height:1.35;">▪</span>'
+            f'<span style="font-size:40px;color:#222;line-height:1.35;">{b}</span>'
             f'</div>'
             for b in slide.get("bullets", [])
         )
         inner = (
-            '<div style="background:#fff;width:100%;height:100%;padding:5% 7%;display:flex;flex-direction:column;">'
-            f'<div style="font-size:clamp(0.9rem,1.4vw,1.2rem);color:#999;text-transform:uppercase;'
-            f'letter-spacing:0.08em;margin-bottom:0.4rem;">{slide.get("section","")}</div>'
-            '<div style="height:1px;background:#e0e0e0;margin-bottom:0.8rem;"></div>'
-            f'<div style="font-size:clamp(1.6rem,3.6vw,3rem);font-weight:800;color:#000;'
-            f'margin-bottom:1.2rem;line-height:1.2;">{slide.get("title","")}</div>'
+            '<div style="background:#fff;width:100%;height:100%;padding:6% 7%;display:flex;flex-direction:column;">'
+            '<div style="font-size:24px;color:#999;text-transform:uppercase;'
+            f'letter-spacing:0.08em;margin-bottom:0.5rem;">{slide.get("section","")}</div>'
+            '<div style="height:2px;background:#e0e0e0;margin-bottom:1.2rem;"></div>'
+            '<div style="font-size:58px;font-weight:800;color:#000;'
+            f'margin-bottom:1.6rem;line-height:1.2;">{slide.get("title","")}</div>'
             f'<div style="flex:1;display:flex;flex-direction:column;justify-content:space-evenly;'
-            f'overflow:hidden;">{bullets_html}</div>'
+            f'overflow:auto;">{bullets_html}</div>'
             '</div>'
+        )
+        return inner
+
+    elif stype == "concept":
+        analogy = (slide.get("analogy") or "").strip()
+        analogy_html = (
+            '<div style="background:#f2f2f2;border-left:8px solid #111;border-radius:10px;'
+            'padding:1.4rem 1.6rem;margin-top:1.6rem;font-size:34px;color:#333;line-height:1.5;">'
+            f'💡 {analogy}</div>'
+        ) if analogy else ""
+        inner = (
+            '<div style="background:#fff;width:100%;height:100%;padding:6% 7%;display:flex;flex-direction:column;">'
+            '<div style="font-size:24px;color:#999;text-transform:uppercase;'
+            f'letter-spacing:0.08em;margin-bottom:0.5rem;">{slide.get("section","")} · 개념</div>'
+            '<div style="height:2px;background:#e0e0e0;margin-bottom:1.2rem;"></div>'
+            '<div style="font-size:56px;font-weight:800;color:#000;'
+            f'margin-bottom:1.4rem;line-height:1.25;">{slide.get("term","")}</div>'
+            '<div style="flex:1;display:flex;flex-direction:column;justify-content:center;overflow:auto;">'
+            '<div style="font-size:38px;color:#222;line-height:1.55;">'
+            f'{slide.get("explain","")}</div>'
+            f'{analogy_html}'
+            '</div></div>'
         )
         return inner
 
@@ -348,67 +375,69 @@ def _slide_inner_html(slide: dict) -> str:
         items = slide.get("items", [])
         cards_html = "".join(
             '<div style="display:flex;align-items:stretch;background:#f2f2f2;border:1px solid #ccc;'
-            'border-radius:8px;flex:1;min-height:0;overflow:hidden;">'
+            'border-radius:10px;flex:1;min-height:0;overflow:hidden;">'
             '<div style="background:#111;color:#fff;font-weight:800;display:flex;align-items:center;'
-            'justify-content:center;min-width:clamp(2.6rem,4.5vw,4rem);'
-            f'font-size:clamp(1.3rem,2.6vw,2.2rem);">{(i+1) if variant=="number" else "•"}</div>'
-            '<div style="display:flex;align-items:center;padding:0.4rem 1.1rem;'
-            f'font-size:clamp(1.1rem,2.5vw,2.1rem);color:#222;line-height:1.25;">{item}</div>'
+            'justify-content:center;min-width:80px;'
+            f'font-size:44px;">{(i+1) if variant=="number" else "•"}</div>'
+            '<div style="display:flex;align-items:center;padding:0.6rem 1.4rem;'
+            f'font-size:40px;color:#222;line-height:1.3;">{item}</div>'
             '</div>'
             for i, item in enumerate(items)
         )
         inner = (
-            '<div style="background:#fff;width:100%;height:100%;padding:5% 7%;display:flex;flex-direction:column;">'
-            f'<div style="font-size:clamp(0.9rem,1.4vw,1.2rem);color:#999;text-transform:uppercase;'
-            f'letter-spacing:0.08em;margin-bottom:0.4rem;">{slide.get("section","")}</div>'
-            '<div style="height:1px;background:#e0e0e0;margin-bottom:0.8rem;"></div>'
-            f'<div style="font-size:clamp(1.6rem,3.6vw,3rem);font-weight:800;color:#000;'
-            f'margin-bottom:1rem;line-height:1.2;">{slide.get("title","")}</div>'
-            f'<div style="flex:1;display:flex;flex-direction:column;gap:0.7rem;min-height:0;">{cards_html}</div>'
+            '<div style="background:#fff;width:100%;height:100%;padding:6% 7%;display:flex;flex-direction:column;">'
+            '<div style="font-size:24px;color:#999;text-transform:uppercase;'
+            f'letter-spacing:0.08em;margin-bottom:0.5rem;">{slide.get("section","")}</div>'
+            '<div style="height:2px;background:#e0e0e0;margin-bottom:1.2rem;"></div>'
+            '<div style="font-size:58px;font-weight:800;color:#000;'
+            f'margin-bottom:1.4rem;line-height:1.2;">{slide.get("title","")}</div>'
+            f'<div style="flex:1;display:flex;flex-direction:column;gap:1rem;min-height:0;">{cards_html}</div>'
             '</div>'
         )
         return inner
 
     elif stype == "flow":
+        # 세로 캔버스 → 박스를 위→아래로 스택하고 사이 화살표는 아래(▼) 방향.
         steps = slide.get("steps", [])
         boxes = []
         for idx, step in enumerate(steps):
             items_html = "".join(
-                f'<div style="font-size:clamp(0.95rem,1.8vw,1.5rem);color:#222;'
-                f'margin-bottom:0.5rem;line-height:1.3;">· {it}</div>'
+                f'<div style="font-size:32px;color:#222;'
+                f'margin-bottom:0.55rem;line-height:1.4;">· {it}</div>'
                 for it in step.get("items", [])
             )
             boxes.append(
-                '<div style="flex:1;background:#f2f2f2;border:2px solid #111;border-radius:10px;'
-                'padding:1.1rem 0.9rem;display:flex;flex-direction:column;min-width:0;">'
-                '<div style="font-weight:800;text-align:center;color:#000;'
-                'font-size:clamp(1.2rem,2.4vw,2rem);margin-bottom:0.9rem;">'
+                '<div style="flex:1;background:#f2f2f2;border:2px solid #111;border-radius:12px;'
+                'padding:1.4rem 1.8rem;display:flex;flex-direction:column;min-height:0;">'
+                '<div style="font-weight:800;color:#000;'
+                'font-size:40px;margin-bottom:0.9rem;">'
                 f'{step.get("label","")}</div>'
                 f'<div style="flex:1;">{items_html}</div></div>'
             )
             if idx < len(steps) - 1:
                 boxes.append(
-                    '<div style="display:flex;align-items:center;color:#777;'
-                    'font-size:clamp(1.5rem,3vw,2.6rem);padding:0 0.35rem;">▶</div>'
+                    '<div style="display:flex;justify-content:center;color:#777;'
+                    'font-size:42px;padding:0.35rem 0;flex-shrink:0;">▼</div>'
                 )
         boxes_html = "".join(boxes)
         inner = (
-            '<div style="background:#fff;width:100%;height:100%;padding:5% 7%;display:flex;flex-direction:column;">'
-            f'<div style="font-size:clamp(0.9rem,1.4vw,1.2rem);color:#999;text-transform:uppercase;'
-            f'letter-spacing:0.08em;margin-bottom:0.4rem;">{slide.get("section","")}</div>'
-            '<div style="height:1px;background:#e0e0e0;margin-bottom:0.8rem;"></div>'
-            f'<div style="font-size:clamp(1.6rem,3.6vw,3rem);font-weight:800;color:#000;'
-            f'margin-bottom:1rem;line-height:1.2;">{slide.get("title","")}</div>'
-            f'<div style="flex:1;display:flex;align-items:stretch;min-height:0;">{boxes_html}</div>'
+            '<div style="background:#fff;width:100%;height:100%;padding:6% 7%;display:flex;flex-direction:column;">'
+            '<div style="font-size:24px;color:#999;text-transform:uppercase;'
+            f'letter-spacing:0.08em;margin-bottom:0.5rem;">{slide.get("section","")}</div>'
+            '<div style="height:2px;background:#e0e0e0;margin-bottom:1.2rem;"></div>'
+            '<div style="font-size:58px;font-weight:800;color:#000;'
+            f'margin-bottom:1.4rem;line-height:1.2;">{slide.get("title","")}</div>'
+            f'<div style="flex:1;display:flex;flex-direction:column;min-height:0;gap:0.3rem;">{boxes_html}</div>'
             '</div>'
         )
         return inner
 
     elif stype == "table":
+        # 세로 캔버스 → 행 패딩을 키워 표가 세로를 고르게 채우도록 한다.
         headers = slide.get("headers", [])
         rows = slide.get("rows", [])
         header_cells = "".join(
-            f'<th style="background:#111;color:#fff;padding:11px 14px;font-size:clamp(1rem,1.8vw,1.6rem);'
+            f'<th style="background:#111;color:#fff;padding:18px 20px;font-size:30px;'
             f'font-weight:700;text-align:left;white-space:nowrap;">{h}</th>'
             for h in headers
         )
@@ -416,47 +445,72 @@ def _slide_inner_html(slide: dict) -> str:
         for i, row in enumerate(rows):
             bg = "#fff" if i % 2 == 0 else "#f6f6f6"
             cells = "".join(
-                f'<td style="padding:9px 14px;font-size:clamp(0.95rem,1.6vw,1.45rem);'
-                f'color:#222;border-bottom:1px solid #eee;line-height:1.25;">{row[j] if j < len(row) else ""}</td>'
+                f'<td style="padding:16px 20px;font-size:28px;'
+                f'color:#222;border-bottom:1px solid #eee;line-height:1.35;">{row[j] if j < len(row) else ""}</td>'
                 for j in range(len(headers))
             )
             body_rows += f'<tr style="background:{bg};">{cells}</tr>'
         inner = (
-            '<div style="background:#fff;width:100%;height:100%;padding:4% 6%;display:flex;flex-direction:column;">'
-            f'<div style="font-size:clamp(0.9rem,1.4vw,1.2rem);color:#999;text-transform:uppercase;'
-            f'letter-spacing:0.08em;margin-bottom:0.4rem;">{slide.get("section","")}</div>'
-            '<div style="height:1px;background:#e0e0e0;margin-bottom:0.7rem;"></div>'
-            f'<div style="font-size:clamp(1.4rem,3vw,2.4rem);font-weight:800;color:#000;margin-bottom:0.8rem;">'
+            '<div style="background:#fff;width:100%;height:100%;padding:5% 6%;display:flex;flex-direction:column;">'
+            '<div style="font-size:24px;color:#999;text-transform:uppercase;'
+            f'letter-spacing:0.08em;margin-bottom:0.5rem;">{slide.get("section","")}</div>'
+            '<div style="height:2px;background:#e0e0e0;margin-bottom:1rem;"></div>'
+            '<div style="font-size:52px;font-weight:800;color:#000;margin-bottom:1.2rem;line-height:1.2;">'
             f'{slide.get("title","")}</div>'
             '<div style="flex:1;overflow:auto;">'
-            f'<table style="width:100%;border-collapse:collapse;">'
+            f'<table style="width:100%;height:100%;border-collapse:collapse;">'
             f'<thead><tr>{header_cells}</tr></thead>'
             f'<tbody>{body_rows}</tbody>'
             '</table></div></div>'
         )
         return inner
 
+    elif stype == "references":
+        items_html = "".join(
+            '<div style="margin-bottom:0;">'
+            f'<div style="font-size:34px;color:#111;font-weight:600;line-height:1.35;">{it.get("head","")}</div>'
+            + (f'<div style="font-size:26px;color:#777;line-height:1.45;margin-top:0.35rem;">{it.get("desc","")}</div>'
+               if it.get("desc") else "")
+            + '</div>'
+            for it in slide.get("items", [])
+        )
+        inner = (
+            '<div style="background:#fff;width:100%;height:100%;padding:6% 7%;display:flex;flex-direction:column;">'
+            '<div style="font-size:24px;color:#999;text-transform:uppercase;'
+            f'letter-spacing:0.08em;margin-bottom:0.5rem;">{slide.get("section","")}</div>'
+            '<div style="height:2px;background:#e0e0e0;margin-bottom:1.2rem;"></div>'
+            '<div style="font-size:52px;font-weight:800;color:#000;margin-bottom:1.4rem;line-height:1.2;">'
+            f'{slide.get("title","")}</div>'
+            '<div style="flex:1;display:flex;flex-direction:column;justify-content:space-evenly;'
+            f'overflow:auto;">{items_html}</div>'
+            '</div>'
+        )
+        return inner
+
     elif stype == "comparison":
+        # 세로 캔버스 → 좌/우 2열 대신 위/아래 2행으로 스택.
         left_html = "".join(
-            f'<div style="margin-bottom:0.5rem;font-size:clamp(1rem,1.9vw,1.6rem);color:#222;">'
+            f'<div style="margin-bottom:0.6rem;font-size:34px;color:#222;line-height:1.4;">'
             f'▪ {item}</div>'
             for item in slide.get("left_items", [])
         )
         right_html = "".join(
-            f'<div style="margin-bottom:0.5rem;font-size:clamp(1rem,1.9vw,1.6rem);color:#222;">'
+            f'<div style="margin-bottom:0.6rem;font-size:34px;color:#222;line-height:1.4;">'
             f'▪ {item}</div>'
             for item in slide.get("right_items", [])
         )
         inner = (
-            '<div style="background:#fff;width:100%;height:100%;padding:5% 7%;display:flex;flex-direction:column;">'
-            f'<div style="font-size:clamp(1.4rem,3vw,2.4rem);font-weight:800;color:#000;margin-bottom:0.8rem;">'
+            '<div style="background:#fff;width:100%;height:100%;padding:6% 7%;display:flex;flex-direction:column;">'
+            '<div style="font-size:52px;font-weight:800;color:#000;margin-bottom:1.2rem;line-height:1.2;">'
             f'{slide.get("title","")}</div>'
-            '<div style="height:1px;background:#e0e0e0;margin-bottom:0.8rem;"></div>'
-            '<div style="display:grid;grid-template-columns:1fr 1px 1fr;gap:0 1.5rem;flex:1;">'
-            f'<div><div style="font-weight:700;margin-bottom:0.6rem;font-size:clamp(1.1rem,2vw,1.7rem);">'
+            '<div style="height:2px;background:#e0e0e0;margin-bottom:1.2rem;"></div>'
+            '<div style="display:flex;flex-direction:column;flex:1;min-height:0;gap:1.4rem;">'
+            '<div style="flex:1;min-height:0;display:flex;flex-direction:column;">'
+            '<div style="font-weight:700;margin-bottom:0.8rem;font-size:38px;">'
             f'{slide.get("left_label","")}</div>{left_html}</div>'
-            '<div style="background:#e0e0e0;"></div>'
-            f'<div><div style="font-weight:700;margin-bottom:0.6rem;font-size:clamp(1.1rem,2vw,1.7rem);">'
+            '<div style="height:2px;background:#e0e0e0;"></div>'
+            '<div style="flex:1;min-height:0;display:flex;flex-direction:column;">'
+            '<div style="font-weight:700;margin-bottom:0.8rem;font-size:38px;">'
             f'{slide.get("right_label","")}</div>{right_html}</div>'
             '</div></div>'
         )
@@ -464,21 +518,22 @@ def _slide_inner_html(slide: dict) -> str:
 
     elif stype == "summary":
         lessons_html = "".join(
-            f'<div style="display:flex;align-items:flex-start;margin-bottom:0.7rem;">'
-            f'<span style="font-weight:800;color:#000;margin-right:0.7rem;flex-shrink:0;'
-            f'font-size:clamp(1.1rem,2vw,1.7rem);">{i+1}.</span>'
-            f'<span style="font-size:clamp(1.05rem,2vw,1.6rem);color:#222;line-height:1.3;">{lesson}</span>'
+            f'<div style="display:flex;align-items:flex-start;">'
+            f'<span style="font-weight:800;color:#000;margin-right:0.9rem;flex-shrink:0;'
+            f'font-size:34px;line-height:1.4;">{i+1}.</span>'
+            f'<span style="font-size:34px;color:#222;line-height:1.4;">{lesson}</span>'
             f'</div>'
             for i, lesson in enumerate(slide.get("lessons", []))
         )
         source = slide.get("source", "")
         inner = (
-            '<div style="background:#f5f5f5;width:100%;height:100%;padding:5% 7%;display:flex;flex-direction:column;">'
-            '<div style="font-size:clamp(1.5rem,3vw,2.4rem);font-weight:800;color:#000;margin-bottom:0.5rem;">'
+            '<div style="background:#f5f5f5;width:100%;height:100%;padding:6% 7%;display:flex;flex-direction:column;">'
+            '<div style="font-size:52px;font-weight:800;color:#000;margin-bottom:0.7rem;line-height:1.2;">'
             '커리큘럼 요약</div>'
-            '<div style="height:1px;background:#ccc;margin-bottom:1rem;"></div>'
-            f'<div style="flex:1;overflow:hidden;">{lessons_html}</div>'
-            f'<div style="font-size:0.95rem;color:#999;margin-top:0.5rem;">출처: {source}</div>'
+            '<div style="height:2px;background:#ccc;margin-bottom:1.4rem;"></div>'
+            '<div style="flex:1;display:flex;flex-direction:column;justify-content:space-evenly;'
+            f'overflow:auto;">{lessons_html}</div>'
+            f'<div style="font-size:22px;color:#999;margin-top:0.8rem;">출처: {source}</div>'
             '</div>'
         )
         return inner
@@ -487,59 +542,99 @@ def _slide_inner_html(slide: dict) -> str:
 
 
 def _render_slide(slide: dict) -> None:
-    """슬라이드를 16:9 고정 비율 HTML로 렌더링한다."""
-    st.markdown(WRAP_OPEN + _slide_inner_html(slide) + WRAP_CLOSE, unsafe_allow_html=True)
+    """슬라이드 한 장을 캔버스 덱으로 렌더링한다(덱과 동일 스케일 처리)."""
+    _render_slide_deck([slide], height=840)
 
 
-# 클라이언트 덱: 좌우 화살표 이동 + 전체화면(브라우저 Fullscreen API)
+# 클라이언트 덱: 1280×1600(세로 4:5) 고정 캔버스를 컨테이너 폭에 맞춰 transform:scale.
+# 폰트가 박스와 같은 비율로 스케일되어 절대 넘치지 않는다(PowerPoint식 WYSIWYG).
 _DECK_TEMPLATE = """
 <style>
   *{box-sizing:border-box;}
   html,body{margin:0;padding:0;background:transparent;}
   #root{font-family:-apple-system,'Segoe UI',sans-serif;}
-  #stage{display:flex;align-items:center;justify-content:center;}
-  .slide{width:min(100%, calc((100vh - 64px) * 16 / 9));}
-  .frame{position:relative;width:100%;aspect-ratio:16/9;border-radius:10px;
+  #stage{display:flex;justify-content:center;}
+  /* 세로 4:5 슬라이드가 넓은 컨테이너(전체 보기)에서 과도하게 커지지 않도록 표시폭 캡 */
+  .viewport{width:100%;max-width:620px;margin:0 auto;overflow:hidden;}
+  #root.fs .viewport{max-width:none;margin:0;}
+  .scaler{position:relative;width:__CW__px;height:__CH__px;transform-origin:top left;}
+  .slide{position:absolute;inset:0;width:__CW__px;height:__CH__px;}
+  .frame{position:relative;width:__CW__px;height:__CH__px;border-radius:10px;
          overflow:hidden;box-shadow:0 2px 8px rgba(0,0,0,0.15);display:flex;flex-direction:column;}
-  #bar{display:flex;align-items:center;justify-content:center;gap:0.6rem;margin-top:0.6rem;}
-  #bar button{border:1px solid #ccc;background:#fff;border-radius:6px;padding:0.3rem 0.85rem;
-              cursor:pointer;font-size:0.9rem;color:#222;}
-  #bar button:hover{background:#f2f2f2;}
-  #bar button:disabled{opacity:0.4;cursor:default;}
-  #counter{color:#666;font-size:0.9rem;min-width:74px;text-align:center;}
+  /* 하단 마우스 조작 바: 큼직한 페이지 이동 버튼 */
+  #bar{display:flex;align-items:center;justify-content:center;gap:0.7rem;margin-top:0.9rem;
+       max-width:620px;margin-left:auto;margin-right:auto;}
+  #bar button{border:1px solid #ccc;background:#fff;border-radius:10px;padding:0.6rem 1.3rem;
+              cursor:pointer;font-size:1.05rem;font-weight:600;color:#222;line-height:1;
+              transition:background 0.12s,transform 0.05s;}
+  #bar button:hover:not(:disabled){background:#f2f2f2;}
+  #bar button:active:not(:disabled){transform:translateY(1px);}
+  #bar .nav{min-width:96px;}
+  #bar #fs{margin-left:0.4rem;}
+  #bar button:disabled{opacity:0.35;cursor:default;}
+  #counter{color:#555;font-size:1.05rem;font-weight:600;min-width:88px;text-align:center;}
   #root.fs{background:#000;display:flex;flex-direction:column;justify-content:center;height:100vh;}
-  #root.fs #stage{flex:1;}
-  #root.fs .slide{width:min(100vw, calc((100vh - 64px) * 16 / 9));}
+  #root.fs #stage{flex:1;align-items:center;}
   #root.fs #counter{color:#bbb;}
   #root.fs #bar button{background:#222;border-color:#444;color:#eee;}
-  #root.fs #bar{padding-bottom:0.6rem;}
+  #root.fs #bar button:hover:not(:disabled){background:#333;}
+  #root.fs #bar{padding-bottom:0.8rem;}
 </style>
 <div id="root">
-  <div id="stage">__SLIDES__</div>
+  <div id="stage"><div class="viewport"><div class="scaler">__SLIDES__</div></div></div>
   <div id="bar">
-    <button id="prev">← 이전</button>
+    <button id="prev" class="nav">◀ 이전</button>
     <span id="counter"></span>
-    <button id="next">다음 →</button>
+    <button id="next" class="nav">다음 ▶</button>
     <button id="fs">⛶ 전체화면</button>
   </div>
 </div>
 <script>
 (function(){
   var n = __N__, i = 0;
+  var CW = __CW__, CH = __CH__;
   var root = document.getElementById('root');
   var slides = root.querySelectorAll('.slide');
+  var viewport = root.querySelector('.viewport');
+  var scaler = root.querySelector('.scaler');
   var counter = document.getElementById('counter');
   var prev = document.getElementById('prev');
   var next = document.getElementById('next');
   var fs = document.getElementById('fs');
+
   function show(){
-    for (var k=0;k<slides.length;k++){ slides[k].style.display = (k===i?'flex':'none'); }
+    for (var k=0;k<slides.length;k++){ slides[k].style.display = (k===i?'block':'none'); }
     counter.textContent = (i+1)+' / '+n;
     prev.disabled = (i===0);
     next.disabled = (i===n-1);
   }
   prev.onclick = function(){ if(i>0){ i--; show(); } };
   next.onclick = function(){ if(i<n-1){ i++; show(); } };
+
+  // ── 스케일: 컨테이너 폭(전체화면이면 화면 폭)에 맞춰 캔버스를 통째로 축소 ──
+  function curWidth(){
+    if (root.classList.contains('fs')){
+      return Math.min(window.innerWidth, window.innerHeight * CW / CH) - 8;
+    }
+    return viewport.clientWidth;
+  }
+  var lastW = -1;
+  function reportHeight(){
+    try {
+      var h = Math.ceil(root.scrollHeight) + 4;
+      window.parent.postMessage({type:'streamlit:setFrameHeight', height:h}, '*');
+    } catch(e){}
+  }
+  function applyScale(force){
+    var w = curWidth();
+    if (!force && Math.abs(w - lastW) < 0.5) return;
+    lastW = w;
+    var s = w / CW;
+    scaler.style.transform = 'scale(' + s + ')';
+    viewport.style.height = (CH * s) + 'px';
+    viewport.style.width = root.classList.contains('fs') ? (w + 'px') : '100%';
+    reportHeight();
+  }
 
   // srcdoc iframe은 부모와 동일 출처 → iframe 요소 자체를 전체화면으로(상위 문서 권한 사용)
   function frameEl(){ try { return window.frameElement; } catch(e){ return null; } }
@@ -552,6 +647,7 @@ _DECK_TEMPLATE = """
     var fe = frameEl();
     var on = !!fsElement() && (fsElement() === fe || fsElement() === root);
     root.classList.toggle('fs', on);
+    applyScale(true);
   }
   fs.onclick = function(){
     var cur = fsElement();
@@ -575,23 +671,41 @@ _DECK_TEMPLATE = """
     if (e.key==='ArrowLeft'){ prev.onclick(); }
     else if (e.key==='ArrowRight'){ next.onclick(); }
   });
+
+  if (typeof ResizeObserver !== 'undefined'){
+    new ResizeObserver(function(){ applyScale(false); }).observe(viewport);
+  }
+  window.addEventListener('resize', function(){ applyScale(true); });
+
   show();
+  applyScale(true);
 })();
 </script>
 """
 
 
 def _render_slide_deck(slides: list[dict], height: int = 560) -> None:
-    """슬라이드 목록을 화살표 이동 + 전체화면 가능한 클라이언트 덱으로 렌더링한다."""
+    """슬라이드 목록을 화살표 이동 + 전체화면 가능한 클라이언트 덱으로 렌더링한다.
+
+    1280×720 캔버스에 슬라이드를 절대 px로 그린 뒤 컨테이너 폭에 맞춰 scale한다.
+    실제 높이는 iframe 안에서 postMessage(setFrameHeight)로 부모에 통보하며,
+    height 인자는 통보 전 초기 높이(폴백)로만 쓰인다.
+    """
     boxes = []
     for i, s in enumerate(slides):
-        disp = "flex" if i == 0 else "none"
+        disp = "block" if i == 0 else "none"
         boxes.append(
             f'<div class="slide" style="display:{disp};">'
             f'<div class="frame">{_slide_inner_html(s)}</div>'
             f'</div>'
         )
-    html = _DECK_TEMPLATE.replace("__SLIDES__", "".join(boxes)).replace("__N__", str(len(slides)))
+    html = (
+        _DECK_TEMPLATE
+        .replace("__SLIDES__", "".join(boxes))
+        .replace("__N__", str(len(slides)))
+        .replace("__CW__", str(CANVAS_W))
+        .replace("__CH__", str(CANVAS_H))
+    )
     components.html(html, height=height, scrolling=False)
 
 
@@ -1215,6 +1329,49 @@ def _pixel_thumb(seed: str, title: str, height: int = 104) -> str:
     )
 
 
+def _render_session_doc_collapsible(doc: str) -> None:
+    """단일 강 교재 마크다운을 H3(### ) 소제목 단위로 접어 렌더한다.
+
+    긴 교재를 한 덩어리로 쏟지 않고 '이번 강 소개·학습 목표·핵심 학습 내용·
+    실습 안내' 등으로 접어, 슬라이드와 대조하며 필요한 부분만 펼쳐 본다.
+    소개·학습 목표·(첫) 핵심 학습 내용만 기본 펼침, 나머지는 접힘.
+    """
+    head: list[str] = []
+    sections: list[tuple[str, list[str]]] = []
+    cur_title: str | None = None
+    cur_body: list[str] = []
+    for ln in doc.split("\n"):
+        if ln.startswith("### "):
+            if cur_title is None:
+                head = cur_body
+            else:
+                sections.append((cur_title, cur_body))
+            cur_title = ln[4:].strip()
+            cur_body = []
+        else:
+            cur_body.append(ln)
+    if cur_title is None:
+        head = cur_body
+    else:
+        sections.append((cur_title, cur_body))
+
+    if any(s.strip() for s in head):
+        st.markdown("\n".join(head))
+
+    core_seen = 0
+    core_total = sum(1 for t, _ in sections if t == "핵심 학습 내용")
+    for title, body in sections:
+        label = title
+        expanded = title in ("이번 강 소개", "학습 목표")
+        if title == "핵심 학습 내용":
+            core_seen += 1
+            if core_total > 1:
+                label = f"핵심 학습 내용 ({core_seen})"
+            expanded = expanded or core_seen == 1  # 첫 핵심 내용만 펼침
+        with st.expander(label, expanded=expanded):
+            st.markdown("\n".join(body))
+
+
 def _render_textbook(curriculum, sessions, selected_week):
     """교재 본문(전체 개요 또는 특정 강)을 렌더한다. 독립 스크롤 컨테이너 안에서 호출."""
     if selected_week == 0:
@@ -1261,10 +1418,10 @@ def _render_textbook(curriculum, sessions, selected_week):
                             + (f" — {note}" if note else "")
                         )
     else:
-        # 특정 강 교재
+        # 특정 강 교재 — 소제목 단위로 접어 슬라이드와 대조하기 쉽게
         ses = next((s for s in sessions if s["week"] == selected_week), None)
         if ses:
-            st.markdown(build_session_doc(curriculum, ses))
+            _render_session_doc_collapsible(build_session_doc(curriculum, ses))
         else:
             st.warning("해당 강 세션을 찾을 수 없습니다.")
 
@@ -1323,13 +1480,6 @@ def render_curriculum():
                 order = cur_data.get("order")
                 level = cur_data.get("level", "")
                 prereq = cur_data.get("prerequisites", [])
-                try:
-                    has_pptx = bool(
-                        cur_data.get("generated", {}).get("pptx_path") and
-                        Path(cur_data["generated"]["pptx_path"]).exists()
-                    )
-                except Exception:
-                    has_pptx = False
 
                 if cur_data.get("track") == "special":
                     badge = "특별 강의"
@@ -1351,10 +1501,6 @@ def render_curriculum():
                     f'margin-bottom:0.4rem;">🧭 {_esc(badge)}</span>'
                     if badge else ""
                 )
-                pptx_html = (
-                    '<span style="font-size:0.72rem;color:#615d59;">📎 PPTX</span>'
-                    if has_pptx else ""
-                )
                 # 고정 높이 본문: 썸네일 + 배지 + 제목(2줄 클램프) + 메타 + 설명(2줄 클램프)
                 body = (
                     _pixel_thumb(entry.get("id") or entry["title"], entry["title"])
@@ -1364,7 +1510,7 @@ def render_curriculum():
                       f'line-height:1.3;margin-bottom:0.25rem;display:-webkit-box;-webkit-line-clamp:2;'
                       f'-webkit-box-orient:vertical;overflow:hidden;">{_esc(entry["title"])}</div>'
                     + f'<div style="font-size:0.78rem;color:#615d59;margin-bottom:0.35rem;">'
-                      f'{_esc(audience)} · 총 {n_sessions}강 {pptx_html}</div>'
+                      f'{_esc(audience)} · 총 {n_sessions}강</div>'
                     + (f'<div style="font-size:0.82rem;color:#615d59;line-height:1.45;flex:1;'
                        f'display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;'
                        f'overflow:hidden;">{_esc(desc)}</div>' if desc else "")
@@ -1507,17 +1653,6 @@ def render_curriculum():
                         st.rerun()
 
         all_slides = load_slides(curriculum)
-        pptx_path = curriculum.get("generated", {}).get("pptx_path")
-
-        def _pptx_download(key: str):
-            if pptx_path and Path(pptx_path).exists():
-                with open(pptx_path, "rb") as f:
-                    st.download_button(
-                        "⬇️ PPTX 다운로드", data=f,
-                        file_name=Path(pptx_path).name,
-                        mime="application/vnd.openxmlformats-officedocument.presentationml.presentation",
-                        key=key, use_container_width=True,
-                    )
 
         if selected_week == 0:
             # ── 전체 보기: 탭으로 교재 전체 / 슬라이드 전체 (각각 자체 스크롤) ──
@@ -1532,8 +1667,7 @@ def render_curriculum():
                     st.info('슬라이드가 없습니다. Claude Code에 `"커리큘럼 슬라이드 업데이트해줘"`라고 요청하세요.')
                 else:
                     st.caption("⛶ 전체화면 버튼 또는 ← → 화살표 키로 넘길 수 있어요.")
-                    _render_slide_deck(all_slides, height=520)
-                _pptx_download("dl_pptx_all")
+                    _render_slide_deck(all_slides, height=960)
         else:
             # ── 개별 강(공부 모드): 교재 | 슬라이드 2열, 고정 높이로 페이지 스크롤 최소화 ──
             tab_doc, tab_slides = st.columns(2)
@@ -1558,8 +1692,7 @@ def render_curriculum():
                         st.info("이 강에 해당하는 슬라이드가 없습니다.")
                     else:
                         st.caption("⛶ 전체화면 · ← → 키로 넘기기")
-                        _render_slide_deck(view_slides, height=470)
-                _pptx_download("dl_pptx")
+                        _render_slide_deck(view_slides, height=840)
 
 # ── 탭 5: 보조 프로그램 ────────────────────────────────────────
 def render_aux():
