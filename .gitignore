@@ -23,6 +23,10 @@ Thumbs.db
 .idea/
 .vscode/
 
+# === 앱 실행 로그 ===
+*.log
+.streamlit_run.log
+
 # === 데이터 (Google 공유 드라이브가 단일 소스 — git 추적 제외) ===
 # data 폴더는 정션으로 공유 드라이브에 연결됨. 버전관리는 Drive 파일 기록 사용.
 data/
