@@ -217,13 +217,14 @@ class _LocalBackend(_Backend):
         d = self._p(relpath)
         if not d.exists():
             return []
+        prefix = relpath.strip("/")
         out = []
         for f in d.iterdir():
             if not f.is_file():
                 continue
             if suffixes and f.suffix.lower() not in suffixes:
                 continue
-            out.append(f"{relpath.rstrip('/')}/{f.name}")
+            out.append(f"{prefix}/{f.name}" if prefix else f.name)
         return sorted(out)
 
     def exists(self, relpath):
@@ -375,7 +376,8 @@ class _DriveBackend(_Backend):
         self.write_bytes(relpath, content.encode("utf-8"))
 
     def list_dir(self, relpath, suffixes):
-        parent_id = self._folder_id(relpath.strip("/"))
+        prefix = relpath.strip("/")
+        parent_id = self._folder_id(prefix)
         if parent_id is None:
             return []
         out = []
@@ -393,7 +395,7 @@ class _DriveBackend(_Backend):
                 name = f["name"]
                 if suffixes and not any(name.lower().endswith(s) for s in suffixes):
                     continue
-                out.append(f"{relpath.rstrip('/')}/{name}")
+                out.append(f"{prefix}/{name}" if prefix else name)
             page = res.get("nextPageToken")
             if not page:
                 break
@@ -405,7 +407,12 @@ class _DriveBackend(_Backend):
     def delete(self, relpath):
         fid = self._file_id(relpath)
         if fid:
-            self._files().delete(fileId=fid, supportsAllDrives=True).execute()
+            # 공유 드라이브에선 편집자 권한으로 영구삭제(files.delete)가 막혀
+            # 404가 난다. 휴지통으로 보내면(trashed=True) 편집자도 가능하고
+            # 복구도 된다. 목록/존재확인은 trashed=false만 보므로 효과는 동일.
+            self._files().update(
+                fileId=fid, body={"trashed": True}, supportsAllDrives=True,
+            ).execute()
             self._file_cache[relpath.strip("/")] = None
 
     def local_path(self, relpath):
