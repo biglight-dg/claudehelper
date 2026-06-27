@@ -1,6 +1,7 @@
 from pathlib import Path
 import streamlit as st
 import streamlit.components.v1 as components
+from tools import storage
 from tools.file_tools import load_db, save_knowledge_file
 from tools.reader import read_inbox_files, fetch_url, save_to_inbox, read_pdf
 from tools.sources import (
@@ -18,6 +19,9 @@ from tools.curriculum_tools import (
 from tools.aux_tools import (
     load_aux_db, add_aux_program, delete_aux_program, CATEGORIES,
 )
+from tools.tips_tools import (
+    load_tips_db, add_tip, delete_tip, TIP_CATEGORIES,
+)
 from agents.curator import Curator
 from agents.qa import QA
 
@@ -27,8 +31,28 @@ st.set_page_config(
     layout="wide",
 )
 
-INBOX_DIR = Path("data/inbox")
-KNOWLEDGE_DIR = Path("data/knowledge")
+INBOX_REL = "inbox"
+
+
+# ── 데이터 읽기 캐싱 ───────────────────────────────────────────
+# data 폴더가 구글 드라이브 정션이라, 클릭마다 클라우드에서 JSON을 다시 읽으면 느리다.
+# 자주 읽는 함수의 결과를 잠깐(120초) 메모리에 보관해 반복 읽기를 줄인다.
+# 120초가 지나면 자동으로 다시 읽고, 즉시 최신으로 보고 싶으면
+# 사이드바의 관리자 '🔄 데이터 새로고침' 버튼을 누르면 된다.
+_CACHE_TTL = 120  # 초
+
+load_db = st.cache_data(ttl=_CACHE_TTL, show_spinner=False)(load_db)
+load_sources = st.cache_data(ttl=_CACHE_TTL, show_spinner=False)(load_sources)
+load_news = st.cache_data(ttl=_CACHE_TTL, show_spinner=False)(load_news)
+load_curriculum_db = st.cache_data(ttl=_CACHE_TTL, show_spinner=False)(load_curriculum_db)
+load_curriculum = st.cache_data(ttl=_CACHE_TTL, show_spinner=False)(load_curriculum)
+load_aux_db = st.cache_data(ttl=_CACHE_TTL, show_spinner=False)(load_aux_db)
+
+
+def _refresh_data() -> None:
+    """캐싱해 둔 데이터를 모두 비우고 화면을 다시 그린다(즉시 최신 반영)."""
+    st.cache_data.clear()
+    st.rerun()
 
 
 # ── 접근 인증: 공유 비밀번호 게이트 + 역할(role) ────────────────
@@ -109,9 +133,11 @@ _THEME_CSS = """
   --ink: #1a1a1a;          /* soft true-black */
   --ink-muted: #615d59;    /* 보조 텍스트 */
   --ink-faint: #a39e98;    /* 캡션·플레이스홀더 */
-  --primary: #0075de;      /* 유일한 구조적 액센트 */
-  --primary-active: #005bab;
-  --hairline: #e6e6e6;
+  --primary: #7C5CFC;      /* 보라 액센트 */
+  --primary-active: #6A47E8;
+  --primary-soft: #EDE9FE; /* 칩·배지·활성 네비 배경 */
+  --canvas: #F5F3FF;       /* 연보라 캔버스 */
+  --hairline: #ebe7fa;
   --surface: #ffffff;
   /* Level-1 다층 미세 그림자 (Notion Elevation) */
   --shadow-soft: 0 0.175px 1.041px rgba(0,0,0,0.01),
@@ -179,14 +205,14 @@ a, a:visited { color: var(--primary); }
   transform: scale(0.98);
 }
 
-/* 카드: st.container(border=True) — 12px · 헤어라인 · 은은한 그림자 */
+/* 카드: st.container(border=True) — 16px · 헤어라인 · 은은한 그림자 */
 [data-testid="stVerticalBlockBorderWrapper"]:has(> div > [data-testid="stVerticalBlock"]) {
-  border-radius: 12px;
+  border-radius: 16px;
 }
 div[data-testid="stVerticalBlockBorderWrapper"][style*="border"] {
   background: var(--surface);
   border: 1px solid var(--hairline) !important;
-  border-radius: 12px;
+  border-radius: 16px;
   box-shadow: var(--shadow-soft);
 }
 
@@ -198,9 +224,54 @@ div[data-testid="stVerticalBlockBorderWrapper"][style*="border"] {
 }
 [data-baseweb="select"] > div { border-radius: 4px !important; }
 
-/* 탭: 활성 탭 라벨 + 얇은 밑줄 하이라이트만 파랑 (패널은 절대 칠하지 않음) */
+/* 탭: 활성 탭 라벨 + 얇은 밑줄 하이라이트만 보라 (패널은 절대 칠하지 않음) */
 [data-baseweb="tab"][aria-selected="true"] { color: var(--primary) !important; }
 .stTabs [data-baseweb="tab-highlight"] { background-color: var(--primary) !important; }
+
+/* ── 좌측 세로 네비: 사이드바 폭 슬림하게 ── */
+[data-testid="stSidebar"] {
+  width: 232px !important;
+  min-width: 232px !important;
+}
+[data-testid="stSidebar"] > div:first-child { width: 232px !important; }
+
+/* ── 좌측 세로 네비: 사이드바 버튼을 메뉴 항목처럼 ── */
+[data-testid="stSidebar"] .stButton > button {
+  justify-content: flex-start;
+  text-align: left;
+  background: transparent;
+  border: none !important;
+  border-radius: 10px;
+  color: var(--ink-muted);
+  font-weight: 600;
+  padding: 0.5rem 0.85rem;
+  box-shadow: none;
+}
+[data-testid="stSidebar"] .stButton > button:hover {
+  background: var(--primary-soft);
+  color: var(--primary);
+}
+/* 활성 항목(primary) = 연보라 배경 + 보라 텍스트 */
+[data-testid="stSidebar"] .stButton > button[kind="primary"] {
+  background: var(--primary-soft);
+  color: var(--primary);
+  font-weight: 700;
+}
+[data-testid="stSidebar"] .stButton > button[kind="primary"]:hover {
+  background: var(--primary-soft);
+  color: var(--primary-active);
+}
+/* 네비 섹션 헤더 */
+.nav-section {
+  font-size: 0.7rem; font-weight: 700; letter-spacing: 0.06em;
+  text-transform: uppercase; color: var(--ink-faint);
+  margin: 0.9rem 0 0.2rem 0.3rem;
+}
+/* 사이드바 브랜드 로고 */
+.nav-brand {
+  font-size: 1.15rem; font-weight: 800; color: var(--ink);
+  letter-spacing: -0.5px; padding: 0.2rem 0.3rem 0.6rem;
+}
 </style>
 """
 
@@ -252,13 +323,21 @@ code, .stCode, pre { background-color: #2a2a2a !important; color: #e9e9e7 !impor
 [data-testid="stFileUploader"] section {
   background-color: #2a2a2a !important;
 }
+/* 좌측 네비 — 다크에선 활성 항목을 어두운 보라로 */
+:root { --primary-soft: #332b52; }
+[data-testid="stSidebar"] .stButton > button { color: #c9c9c7 !important; }
+[data-testid="stSidebar"] .stButton > button:hover,
+[data-testid="stSidebar"] .stButton > button[kind="primary"] {
+  background: #332b52 !important; color: #c4b5fd !important;
+}
+.nav-brand { color: #e9e9e7 !important; }
 </style>
 """
 
-# 다크 모드 토글 — 사이드바 최상단에 배치(코드 위치와 무관하게 사이드바로 렌더)
-_dark = st.sidebar.toggle("🌙 다크 모드", key="dark_mode")
+# 테마 CSS 주입 — 다크 여부는 session_state로 읽어, 토글 위젯은 사이드바
+# 네비 하단(_render_sidebar_nav)에서 그린다. (위젯 위치와 CSS 주입 시점 분리)
 st.markdown(_THEME_CSS, unsafe_allow_html=True)
-if _dark:
+if st.session_state.get("dark_mode"):
     st.markdown(_DARK_CSS, unsafe_allow_html=True)
 
 
@@ -709,18 +788,21 @@ def _render_slide_deck(slides: list[dict], height: int = 560) -> None:
     components.html(html, height=height, scrolling=False)
 
 
-def _inbox_files() -> list[Path]:
-    """inbox 안의 지원 파일 목록을 반환한다."""
-    if not INBOX_DIR.exists():
-        return []
-    return sorted(
-        list(INBOX_DIR.glob("*.txt")) + list(INBOX_DIR.glob("*.md")) + list(INBOX_DIR.glob("*.pdf"))
-    )
+@st.cache_data(ttl=_CACHE_TTL, show_spinner=False)
+def _inbox_files() -> list[str]:
+    """inbox 안의 지원 파일 상대경로 목록을 반환한다(로컬 또는 드라이브)."""
+    return storage.list_dir(INBOX_REL, (".txt", ".md", ".pdf"))
 
 
-def _is_processed(file_path: Path, db_items: list[dict]) -> bool:
+def _inbox_name(rel: str) -> str:
+    """inbox 상대경로에서 파일 이름만 뽑는다."""
+    return rel.rsplit("/", 1)[-1]
+
+
+def _is_processed(rel: str, db_items: list[dict]) -> bool:
     """inbox 파일이 지식 베이스에 정리돼 반영됐는지 휴리스틱으로 판정한다(표시용)."""
-    stem = file_path.stem.lower().strip()
+    name = _inbox_name(rel)
+    stem = (name.rsplit(".", 1)[0] if "." in name else name).lower().strip()
     if not stem:
         return False
     for item in db_items:
@@ -737,16 +819,19 @@ def _render_digest(digest: dict) -> None:
     구조화 필드(deep_dives 등)가 없으면 knowledge_path 마크다운으로 폴백한다.
     """
     if not digest.get("deep_dives") and not digest.get("intro"):
-        p = Path(digest.get("knowledge_path") or digest.get("path", ""))
-        if p.exists():
-            st.markdown(p.read_text(encoding="utf-8"))
+        rel = storage.to_relpath(digest.get("knowledge_path") or digest.get("path", ""))
+        content = storage.read_text(rel) if rel else None
+        if content is not None:
+            st.markdown(_escape_tilde(content))
         else:
             st.warning("브리핑 내용을 찾을 수 없습니다.")
         return
 
     # 히어로
     st.markdown(
-        '<div style="background:#213183;color:#fff;border-radius:12px;padding:1.4rem 1.6rem;margin-bottom:1.2rem;">'
+        '<div style="background:linear-gradient(135deg,#7C5CFC 0%,#9D7BFF 100%);'
+        'color:#fff;border-radius:16px;padding:1.4rem 1.6rem;margin-bottom:1.2rem;'
+        'box-shadow:0 8px 24px rgba(124,92,252,0.28);">'
         f'<div style="font-size:1.3rem;font-weight:800;margin-bottom:0.5rem;">📋 이번 주 AI 한 편으로</div>'
         f'<div style="font-size:0.85rem;color:rgba(255,255,255,0.6);margin-bottom:0.7rem;">{digest.get("period","")}</div>'
         f'<div style="font-size:1.02rem;line-height:1.6;color:#eee;">{digest.get("intro","")}</div>'
@@ -763,12 +848,12 @@ def _render_digest(digest: dict) -> None:
                 unsafe_allow_html=True,
             )
             if d.get("body"):
-                st.markdown(d["body"])
+                st.markdown(_escape_tilde(d["body"]))
             if d.get("question"):
                 st.markdown(
-                    '<div style="border-left:4px solid #0075de;background:#f6f5f4;'
+                    '<div style="border-left:4px solid #7C5CFC;background:#F5F3FF;'
                     'padding:0.7rem 1rem;border-radius:6px;margin:0.6rem 0;">'
-                    '<b style="color:#0075de;">❔ 생각해볼 질문</b><br>'
+                    '<b style="color:#7C5CFC;">❔ 생각해볼 질문</b><br>'
                     f'<span style="color:#1a1a1a;">{d["question"]}</span></div>',
                     unsafe_allow_html=True,
                 )
@@ -793,7 +878,7 @@ def _render_digest(digest: dict) -> None:
                 line += f"  \n  {blurb}{src}"
             elif src:
                 line += f"  \n  {src}"
-            st.markdown(line, unsafe_allow_html=True)
+            st.markdown(_escape_tilde(line), unsafe_allow_html=True)
 
     # 필요 기술 · 공부거리
     c1, c2 = st.columns(2)
@@ -802,13 +887,13 @@ def _render_digest(digest: dict) -> None:
             with st.container(border=True):
                 st.markdown("**🛠 필요 기술 · 알아두면 좋은 개념**")
                 for x in digest["skills"]:
-                    st.markdown(f"- {x}")
+                    st.markdown(_escape_tilde(f"- {x}"))
     if digest.get("study"):
         with c2:
             with st.container(border=True):
                 st.markdown("**📚 이번 주 공부거리**")
                 for x in digest["study"]:
-                    st.markdown(f"- {x}")
+                    st.markdown(_escape_tilde(f"- {x}"))
 
 
 def _sort_items(items, mode, date_field, title_field="title"):
@@ -821,35 +906,98 @@ def _sort_items(items, mode, date_field, title_field="title"):
     return sorted(items, key=lambda x: x.get(date_field) or "", reverse=(mode == "최신순"))
 
 
-# ── 전역 헤더 + 상시 사이드바 (공부 모드가 아닐 때만 하단에서 호출) ──
-def render_global_chrome():
-    st.title("📚 나만의 지식 베이스")
-    st.caption("문서를 모아두면 Claude Code(팀장)가 교육 자료로 정리해 줍니다.")
+# ── 보라색 그라데이션 히어로 배너 (각 화면 상단 헤더) ──
+def _hero(title: str, subtitle: str = "", emoji: str = "") -> None:
+    """화면 상단에 보라 그라데이션 배너를 그린다(기존 st.title/st.caption 대체)."""
+    sub = (
+        f'<div style="font-size:0.95rem;color:rgba(255,255,255,0.88);'
+        f'margin-top:0.4rem;line-height:1.5;">{subtitle}</div>'
+    ) if subtitle else ""
+    st.markdown(
+        '<div style="background:linear-gradient(135deg,#7C5CFC 0%,#9D7BFF 100%);'
+        'border-radius:16px;padding:1.5rem 1.8rem;margin-bottom:1.3rem;'
+        'box-shadow:0 8px 24px rgba(124,92,252,0.28);">'
+        f'<div style="font-size:1.45rem;font-weight:800;color:#fff;'
+        f'letter-spacing:-0.5px;">{(emoji + " ") if emoji else ""}{title}</div>{sub}</div>',
+        unsafe_allow_html=True,
+    )
 
+
+# ── 상단 통계 위젯 카드 행 (홈/지식 베이스 상단) ──
+def _stat_widgets() -> None:
+    """inbox 대기·지식 문서·커리큘럼·뉴스 수를 흰 카드 4개로 보여준다."""
+    inbox = _inbox_files()
+    db_items = load_db().get("items", [])
+    pending = sum(1 for f in inbox if not _is_processed(f, db_items))
+    try:
+        n_cur = len(load_curriculum_db().get("curricula", []))
+    except Exception:
+        n_cur = 0
+    try:
+        n_news = len(load_news().get("items", []))
+    except Exception:
+        n_news = 0
+    stats = [
+        ("⏳", "inbox 대기", pending),
+        ("📚", "지식 문서", len(db_items)),
+        ("📋", "커리큘럼", n_cur),
+        ("📰", "수집 뉴스", n_news),
+    ]
+    cols = st.columns(4)
+    for col, (emoji, label, val) in zip(cols, stats):
+        col.markdown(
+            '<div style="background:var(--surface);border:1px solid var(--hairline);'
+            'border-radius:16px;padding:1rem 1.1rem;box-shadow:var(--shadow-soft);">'
+            f'<div style="font-size:1.4rem;line-height:1;">{emoji}</div>'
+            f'<div style="font-size:1.7rem;font-weight:800;color:var(--ink);'
+            f'letter-spacing:-1px;margin-top:0.3rem;">{val}</div>'
+            f'<div style="font-size:0.8rem;color:var(--ink-muted);">{label}</div></div>',
+            unsafe_allow_html=True,
+        )
+
+
+# ── 좌측 세로 네비 (사이드바 = 메인 메뉴) + 하단 메타 ──
+def _render_sidebar_nav() -> None:
+    """사이드바를 메인 네비게이션으로 렌더한다. 그룹은 섹션 헤더, 항목은 버튼.
+
+    활성 항목은 primary 버튼(연보라 배경+보라 텍스트)으로 강조한다.
+    하단에 다크모드 토글·새로고침·명령어·역할/로그아웃을 둔다.
+    """
     with st.sidebar:
-        st.markdown("### 🧭 사용 흐름")
-        st.markdown(
-            "**①** 문서·메모 입력  \n"
-            "**②** Claude Code에 `\"정리해줘\"`  \n"
-            "**③** 지식 베이스에서 확인"
-        )
+        st.markdown('<div class="nav-brand">📚 지식 베이스</div>', unsafe_allow_html=True)
+        current = st.session_state.get("nav_page", "📚 지식 베이스")
+        for section, items in GROUPS.items():
+            st.markdown(f'<div class="nav-section">{section}</div>', unsafe_allow_html=True)
+            for label, _fn in items:
+                if st.button(
+                    label, key=f"nav_{label}", use_container_width=True,
+                    type="primary" if label == current else "secondary",
+                ):
+                    st.session_state["nav_page"] = label
+                    st.rerun()
+
         st.divider()
-        st.markdown("### 💬 자주 쓰는 명령어")
-        st.code(
-            "inbox 정리해줘\n"
-            "PPT 만들어줘\n"
-            "[제목] 커리큘럼 만들어줘\n"
-            "방금 만든 문서 검토해줘\n"
-            "ChatGPT 관련 자료 찾아줘",
-            language="text",
-        )
-        st.divider()
-        _sb_inbox = _inbox_files()
-        _sb_db_items = load_db().get("items", [])
-        _sb_pending = sum(1 for f in _sb_inbox if not _is_processed(f, _sb_db_items))
-        sb_c1, sb_c2 = st.columns(2)
-        sb_c1.metric("inbox 대기", _sb_pending)
-        sb_c2.metric("지식 문서", len(_sb_db_items))
+        st.toggle("🌙 다크 모드", key="dark_mode")
+
+        # 관리자: 데이터 새로고침 (캐시 비우고 구글 드라이브에서 최신으로 다시 읽기)
+        if _is_admin():
+            if st.button(
+                "🔄 데이터 새로고침",
+                key="refresh_data_btn",
+                help="구글 드라이브의 최신 데이터를 즉시 다시 불러옵니다. (평소엔 120초마다 자동 갱신)",
+                use_container_width=True,
+            ):
+                _refresh_data()
+
+        with st.expander("💬 자주 쓰는 명령어"):
+            st.code(
+                "inbox 정리해줘\n"
+                "PPT 만들어줘\n"
+                "[제목] 커리큘럼 만들어줘\n"
+                "방금 만든 문서 검토해줘\n"
+                "ChatGPT 관련 자료 찾아줘",
+                language="text",
+            )
 
         # 현재 접속 역할 표시 + 로그아웃 (비번 게이트가 켜진 경우에만 의미 있음)
         if st.secrets.get("admin_password", "") or st.secrets.get("guest_password", ""):
@@ -867,8 +1015,9 @@ def render_global_chrome():
 
 # ── 탭 1: 받은 문서 ────────────────────────────────────────────
 def render_inbox():
-    st.markdown("## 📥 받은 문서")
-    st.caption("파일을 올리거나 링크를 입력하면 inbox에 저장됩니다. 그 다음 Claude Code에 '정리해줘'라고 요청하세요.")
+    _hero("받은 문서",
+          "파일을 올리거나 링크를 입력하면 inbox에 저장됩니다. 그 다음 Claude Code에 '정리해줘'라고 요청하세요.",
+          "📥")
 
     col1, col2 = st.columns(2)
 
@@ -881,12 +1030,8 @@ def render_inbox():
             for f in uploaded:
                 try:
                     if f.name.lower().endswith(".pdf"):
-                        # PDF는 임시 저장 후 텍스트 추출
-                        tmp_path = INBOX_DIR / f.name
-                        INBOX_DIR.mkdir(parents=True, exist_ok=True)
-                        tmp_path.write_bytes(f.read())
-                        extracted = read_pdf(tmp_path)
-                        tmp_path.unlink()  # 원본 PDF 삭제, 텍스트만 저장
+                        # PDF는 메모리에서 바로 텍스트 추출(임시파일 불필요)
+                        extracted = read_pdf(f.read())
                         txt_name = f.name.rsplit(".", 1)[0] + ".txt"
                         header = f"[원본 파일: {f.name}]\n\n"
                         save_to_inbox(txt_name, header + extracted)
@@ -926,39 +1071,40 @@ def render_inbox():
     inbox_files = _inbox_files()
     db_items = load_db().get("items", [])
     if inbox_files:
-        for f in inbox_files:
-            status_chip = "✅ 정리됨" if _is_processed(f, db_items) else "⏳ 대기"
-            with st.expander(f"{f.name}  ·  {status_chip}"):
-                if f.suffix.lower() == ".pdf":
+        for rel in inbox_files:
+            name = _inbox_name(rel)
+            status_chip = "✅ 정리됨" if _is_processed(rel, db_items) else "⏳ 대기"
+            with st.expander(f"{name}  ·  {status_chip}"):
+                if name.lower().endswith(".pdf"):
                     st.caption("PDF 파일 — 아래 버튼으로 텍스트 미리보기")
-                    prev_key = f"pdfprev_{f.name}"
-                    if st.button("텍스트 추출 미리보기", key=f"prev_{f.name}"):
-                        extracted = read_pdf(f)
+                    prev_key = f"pdfprev_{name}"
+                    if st.button("텍스트 추출 미리보기", key=f"prev_{name}"):
+                        extracted = read_pdf(storage.read_bytes(rel) or b"")
                         st.session_state[prev_key] = (
                             extracted[:800] + ("..." if len(extracted) > 800 else "")
                         )
                     if prev_key in st.session_state:
                         st.text(st.session_state[prev_key])
                 else:
-                    content = f.read_text(encoding="utf-8", errors="replace")
+                    content = storage.read_text(rel) or ""
                     st.text(content[:500] + ("..." if len(content) > 500 else ""))
 
                 # 삭제: 2단계 확인 (관리자 전용)
                 if _is_admin():
-                    confirm_key = f"confirm_del_{f.name}"
+                    confirm_key = f"confirm_del_{name}"
                     if st.session_state.get(confirm_key):
                         st.warning("⚠️ 정말 삭제할까요? 되돌릴 수 없습니다.")
                         c_yes, c_no = st.columns(2)
-                        if c_yes.button("삭제 확정", key=f"delyes_{f.name}", type="primary"):
-                            f.unlink()
+                        if c_yes.button("삭제 확정", key=f"delyes_{name}", type="primary"):
+                            storage.delete(rel)
                             st.session_state.pop(confirm_key, None)
-                            st.session_state.pop(f"pdfprev_{f.name}", None)
+                            st.session_state.pop(f"pdfprev_{name}", None)
                             st.rerun()
-                        if c_no.button("취소", key=f"delno_{f.name}"):
+                        if c_no.button("취소", key=f"delno_{name}"):
                             st.session_state.pop(confirm_key, None)
                             st.rerun()
                     else:
-                        if st.button("삭제", key=f"del_{f.name}"):
+                        if st.button("삭제", key=f"del_{name}"):
                             st.session_state[confirm_key] = True
                             st.rerun()
     else:
@@ -966,11 +1112,10 @@ def render_inbox():
 
 # ── 탭: 소스 (RSS · 전문가 SNS) ─────────────────────────────────
 def render_sources():
-    st.markdown("## 📡 소스")
-    st.caption(
-        "RSS 피드와 전문가 SNS를 등록해 자료를 inbox로 자동 수집합니다. "
-        "웹 검색이나 SNS 본문 정리는 Claude Code에 '정리해줘'라고 요청하면 더 안정적입니다."
-    )
+    _hero("소스",
+          "RSS 피드와 전문가 SNS를 등록해 자료를 inbox로 자동 수집합니다. "
+          "웹 검색이나 SNS 본문 정리는 Claude Code에 '정리해줘'라고 요청하면 더 안정적입니다.",
+          "📡")
 
     src = load_sources()
 
@@ -1020,7 +1165,7 @@ def render_sources():
         if st.button("게시물 → inbox", key="sns_post_btn") and post_url.strip():
             with st.spinner("게시물 정보를 가져오는 중..."):
                 path = save_social_post(post_url.strip())
-            st.success(f"저장 완료: {path.name}")
+            st.success(f"저장 완료: {path.rsplit('/', 1)[-1]}")
             st.caption("캡션이 부실하면 Claude Code에 'just-scrape로 가져와줘'라고 요청하세요.")
             st.rerun()
 
@@ -1057,11 +1202,10 @@ def render_sources():
 
 # ── 탭: 최근 뉴스 (뉴스 스트림 + 주간 브리핑) ───────────────────
 def render_news():
-    st.markdown("## 📰 최근 뉴스")
-    st.caption(
-        "구독한 RSS에서 모은 AI 소식이 쌓입니다(앱 열 때 하루 1회 자동 수집). "
-        "지식 문서와 달리 '흘러가는 뉴스'이며, 주 1회 핵심만 골라 브리핑으로 정리합니다."
-    )
+    _hero("최근 뉴스",
+          "구독한 RSS에서 모은 AI 소식이 쌓입니다(앱 열 때 하루 1회 자동 수집). "
+          "지식 문서와 달리 '흘러가는 뉴스'이며, 주 1회 핵심만 골라 브리핑으로 정리합니다.",
+          "📰")
 
     # 앱 열 때 하루 1회 자동 수집 (세션당 1회만 시도)
     if not st.session_state.get("news_daily_done"):
@@ -1123,13 +1267,15 @@ def render_news():
                 pub = f" · {it['published'][:16]}" if it.get("published") else ""
                 badge = "🗂" if it.get("in_digest") else ""
                 st.markdown(
-                    f"**[{it['title']}]({it['link']})**  \n"
-                    f"<small>{badge} {it['source']} · {it.get('category','')}{pub}</small>",
+                    _escape_tilde(
+                        f"**[{it['title']}]({it['link']})**  \n"
+                        f"<small>{badge} {it['source']} · {it.get('category','')}{pub}</small>"
+                    ),
                     unsafe_allow_html=True,
                 )
                 summ = (it.get("summary") or "").strip()
                 if summ:
-                    st.caption(summ[:180] + ("..." if len(summ) > 180 else ""))
+                    st.caption(_escape_tilde(summ[:180] + ("..." if len(summ) > 180 else "")))
 
     # ── 3) 지난 브리핑 아카이브 ──
     if len(digests) > 1:
@@ -1141,8 +1287,9 @@ def render_news():
 
 # ── 탭 2: 직접 메모 ────────────────────────────────────────────
 def render_memo():
-    st.markdown("## ✏️ 직접 메모")
-    st.caption("마크다운으로 메모를 작성하고 inbox에 저장하세요. 저장 후 Claude Code에 '정리해줘'라고 요청하세요.")
+    _hero("직접 메모",
+          "마크다운으로 메모를 작성하고 inbox에 저장하세요. 저장 후 Claude Code에 '정리해줘'라고 요청하세요.",
+          "✏️")
 
     # nonce로 위젯 key를 갈아끼워 저장 후 폼을 비울 수 있게 한다
     if "memo_nonce" not in st.session_state:
@@ -1197,8 +1344,11 @@ def render_memo():
 
 # ── 탭 3: 지식 베이스 ──────────────────────────────────────────
 def render_kb():
-    st.markdown("## 📚 지식 베이스")
-    st.caption("Claude Code가 정리해 저장한 문서들입니다.")
+    _hero("지식 베이스",
+          "Claude Code가 정리해 저장한 문서들입니다.",
+          "📚")
+    _stat_widgets()
+    st.write("")
 
     db = load_db()
     items = db.get("items", [])
@@ -1236,33 +1386,34 @@ def render_kb():
         for item in filtered:
             title = item.get("title", "제목 없음")
             tags = item.get("tags", [])
-            path = Path(item.get("path", ""))
+            rel = storage.to_relpath(item.get("path", ""))
+            fname = rel.rsplit("/", 1)[-1]
             created = item.get("created_at", "")[:10]
 
             tag_str = " ".join(f"`{t}`" for t in tags) if tags else ""
             with st.expander(f"**{title}** {tag_str}  •  {created}"):
-                if path.exists():
-                    content = path.read_text(encoding="utf-8")
-                    st.markdown(content)
+                content = storage.read_text(rel) if rel else None
+                if content is not None:
+                    st.markdown(_escape_tilde(content))
                     st.divider()
                     act_qa, act_dl = st.columns([1, 1])
                     with act_qa:
-                        if st.button("QA 검토", key=f"qa_{path.name}"):
+                        if st.button("QA 검토", key=f"qa_{fname}"):
                             qa = QA()
-                            st.session_state[f"qaresult_{path.name}"] = qa.format_report(
+                            st.session_state[f"qaresult_{fname}"] = qa.format_report(
                                 qa.review(content)
                             )
                     with act_dl:
                         st.download_button(
                             "⬇️ .md 다운로드",
                             data=content,
-                            file_name=path.name,
+                            file_name=fname,
                             mime="text/markdown",
-                            key=f"dl_{path.name}",
+                            key=f"dl_{fname}",
                         )
                     # QA 결과 유지 렌더링
-                    if st.session_state.get(f"qaresult_{path.name}"):
-                        st.markdown(st.session_state[f"qaresult_{path.name}"])
+                    if st.session_state.get(f"qaresult_{fname}"):
+                        st.markdown(st.session_state[f"qaresult_{fname}"])
                 else:
                     st.warning("파일을 찾을 수 없습니다.")
 
@@ -1329,6 +1480,25 @@ def _pixel_thumb(seed: str, title: str, height: int = 104) -> str:
     )
 
 
+def _escape_tilde(md: str) -> str:
+    """본문(교재·뉴스·지식 문서)의 물결표(~)를 안전하게 손질한다.
+
+    Streamlit 마크다운(GFM)은 ~text~ / ~~text~~ 를 취소선으로 해석해
+    '약 5~10분', '~30%' 같은 물결표가 글자에 줄이 그어진 채 깨진다.
+    코드 펜스(```)·인라인 코드(`...`)는 보호하고, 그 밖에서만:
+      · 숫자~숫자 범위 표현은 엔대시(–)로 바꾼다 (5~10분 → 5–10분)
+      · 나머지 ~ 는 리터럴(\\~)로 이스케이프해 취소선을 막는다 (~30% 유지)
+    """
+    import re
+    # 코드 펜스·인라인 코드·마크다운 링크 URL( ](...) )은 보호한다.
+    # 특히 링크 URL의 ~(예: 블로그 주소)를 이스케이프하면 링크가 깨진다.
+    parts = re.split(r"(```.*?```|`[^`]*`|\]\([^)]*\))", md, flags=re.DOTALL)
+    for i in range(0, len(parts), 2):  # 짝수 인덱스 = 보호 대상 바깥
+        seg = re.sub(r"(\d)\s*~\s*(\d)", r"\1–\2", parts[i])  # 범위 → 엔대시
+        parts[i] = seg.replace("~", r"\~")                     # 남은 ~ 이스케이프
+    return "".join(parts)
+
+
 def _render_session_doc_collapsible(doc: str) -> None:
     """단일 강 교재 마크다운을 H3(### ) 소제목 단위로 접어 렌더한다.
 
@@ -1356,7 +1526,7 @@ def _render_session_doc_collapsible(doc: str) -> None:
         sections.append((cur_title, cur_body))
 
     if any(s.strip() for s in head):
-        st.markdown("\n".join(head))
+        st.markdown(_escape_tilde("\n".join(head)))
 
     core_seen = 0
     core_total = sum(1 for t, _ in sections if t == "핵심 학습 내용")
@@ -1369,7 +1539,7 @@ def _render_session_doc_collapsible(doc: str) -> None:
                 label = f"핵심 학습 내용 ({core_seen})"
             expanded = expanded or core_seen == 1  # 첫 핵심 내용만 펼침
         with st.expander(label, expanded=expanded):
-            st.markdown("\n".join(body))
+            st.markdown(_escape_tilde("\n".join(body)))
 
 
 def _render_textbook(curriculum, sessions, selected_week):
@@ -1441,8 +1611,9 @@ def render_curriculum():
     # DASHBOARD 뷰 (커리큘럼 미선택)
     # ════════════════════════════════════════════════════════════
     if st.session_state["cur_selected_id"] is None:
-        st.markdown("## 📋 커리큘럼")
-        st.caption("학습 커리큘럼을 선택해 교재와 슬라이드를 확인하세요.")
+        _hero("커리큘럼",
+              "학습 커리큘럼을 선택해 교재와 슬라이드를 확인하세요.",
+              "📋")
 
         if not curricula:
             st.info('아직 커리큘럼이 없습니다. Claude Code에 `"AI 기초 커리큘럼 만들어줘"`라고 말해보세요.')
@@ -1496,7 +1667,8 @@ def render_curriculum():
                     return (s or "").replace("&", "&amp;").replace("<", "&lt;").replace(">", "&gt;")
 
                 badge_html = (
-                    f'<span style="display:inline-block;background:#f6f5f4;color:#0075de;'
+                    f'<span style="display:inline-block;background:var(--primary-soft,#EDE9FE);'
+                    f'color:var(--primary,#7C5CFC);'
                     f'font-size:0.72rem;font-weight:600;padding:2px 8px;border-radius:9999px;'
                     f'margin-bottom:0.4rem;">🧭 {_esc(badge)}</span>'
                     if badge else ""
@@ -1654,6 +1826,16 @@ def render_curriculum():
 
         all_slides = load_slides(curriculum)
 
+        # 공부 모드 본문 상단 히어로 — 현재 보는 위치(전체/특정 강)를 보라 배너로
+        if selected_week == 0:
+            _hero_sub = (f"{pos} · 전체 보기" if pos else "전체 보기")
+        else:
+            _cur_ses = next((s for s in sessions if s["week"] == selected_week), None)
+            _hero_sub = (
+                f"{selected_week}강 · {_cur_ses['title']}" if _cur_ses else f"{selected_week}강"
+            )
+        _hero(curriculum["title"], _hero_sub, "📚")
+
         if selected_week == 0:
             # ── 전체 보기: 탭으로 교재 전체 / 슬라이드 전체 (각각 자체 스크롤) ──
             st.caption("📖 과정 전체를 한 번에 읽는 모드입니다. 왼쪽에서 특정 강을 고르면 공부 모드로 바뀝니다.")
@@ -1661,7 +1843,7 @@ def render_curriculum():
             with tab_doc_all:
                 # 모든 강의 지식까지 내장된 전체 교재(자체 스크롤 컨테이너)
                 with st.container(height=600):
-                    st.markdown(build_markdown_doc(curriculum))
+                    st.markdown(_escape_tilde(build_markdown_doc(curriculum)))
             with tab_deck_all:
                 if not all_slides:
                     st.info('슬라이드가 없습니다. Claude Code에 `"커리큘럼 슬라이드 업데이트해줘"`라고 요청하세요.')
@@ -1695,10 +1877,35 @@ def render_curriculum():
                         _render_slide_deck(view_slides, height=840)
 
 # ── 탭 5: 보조 프로그램 ────────────────────────────────────────
+# 카테고리별 아이콘 (카드/섹션 헤더 시각 구분용). 미정의 분류는 🔧 폴백.
+_AUX_CAT_EMOJI = {
+    "크롬확장": "🧩",
+    "단축키": "⌨️",
+    "웹툴": "🌐",
+    "데스크톱앱": "🖥️",
+    "기타": "🔧",
+}
+
+
+def _aux_emoji(cat: str) -> str:
+    return _AUX_CAT_EMOJI.get(cat, "🔧")
+
+
+def _domain(url: str) -> str:
+    """URL에서 보기 좋은 도메인만 뽑는다 (www. 제거). 실패 시 빈 문자열."""
+    from urllib.parse import urlparse
+    try:
+        net = urlparse(url).netloc
+        return net[4:] if net.startswith("www.") else net
+    except Exception:
+        return ""
+
+
 def render_aux():
-    st.markdown("## 🧰 보조 프로그램")
-    st.caption("확장프로그램·단축키 사이트·유용한 툴을 모아 관리합니다. "
-               "제목을 클릭하면 브라우저(크롬)에서 바로 열립니다.")
+    _hero("보조 프로그램",
+          "확장프로그램·단축키 사이트·유용한 툴을 모아 관리합니다. "
+          "제목을 클릭하면 브라우저(크롬)에서 바로 열립니다.",
+          "🧰")
 
     # 커리큘럼 id → 제목 매핑 (연관 표시용)
     _cur_title = {c["id"]: c["title"] for c in load_curriculum_db().get("curricula", [])}
@@ -1759,25 +1966,88 @@ def render_aux():
             cat_items = [i for i in aux_items if i.get("category", "기타") == cat]
             if not cat_items:
                 continue
-            st.markdown(f"### {cat}")
-            cols = st.columns(min(3, len(cat_items)))
+            st.markdown(f"### {_aux_emoji(cat)} {cat}  ·  {len(cat_items)}개")
+            cols = st.columns(3)
+
+            def _esc(s: str) -> str:
+                return (s or "").replace("&", "&amp;").replace("<", "&lt;").replace(">", "&gt;")
+
             for i, item in enumerate(cat_items):
                 with cols[i % 3]:
                     with st.container(border=True):
-                        st.markdown(f"**{item.get('title','(제목 없음)')}**")
-                        if item.get("description"):
-                            st.caption(item["description"])
-                        if item.get("tags"):
-                            st.caption("🏷 " + ", ".join(item["tags"]))
+                        title = item.get("title", "(제목 없음)")
+                        emoji = _aux_emoji(item.get("category", "기타"))
+
+                        # 설명: 본문색으로 또렷하게(없으면 안내 문구).
+                        # flex:1 + overflow로 남는 공간을 흡수해 카드 높이를 균일하게 한다.
+                        desc = (item.get("description") or "").strip()
+                        if desc:
+                            desc_html = (
+                                '<div style="font-size:0.88rem;color:var(--ink-muted);'
+                                'line-height:1.55;flex:1;min-height:0;overflow:hidden;">'
+                                f'{_esc(desc)}</div>'
+                            )
+                        else:
+                            desc_html = (
+                                '<div style="font-size:0.84rem;color:var(--ink-faint);'
+                                'font-style:italic;line-height:1.5;flex:1;min-height:0;overflow:hidden;">'
+                                '설명이 아직 없어요 — Claude Code에 “이 도구 설명 추가해줘”'
+                                '라고 요청하면 채워집니다.</div>'
+                            )
+
+                        # 태그 칩 (연보라)
+                        tag_html = "".join(
+                            '<span style="display:inline-block;background:var(--primary-soft);'
+                            'color:var(--primary);font-size:0.72rem;font-weight:600;'
+                            'padding:1px 8px;border-radius:9999px;margin:0 4px 4px 0;">'
+                            f'{_esc(t)}</span>'
+                            for t in item.get("tags", [])
+                        )
+                        tag_block = (
+                            f'<div style="margin-top:0.5rem;">{tag_html}</div>' if tag_html else ""
+                        )
+
+                        # 도메인 + 커리큘럼 연결 (보조 메타)
+                        dom = _domain(item.get("url", ""))
+                        dom_html = (
+                            f'<div style="font-size:0.74rem;color:var(--primary);'
+                            f'margin-top:0.35rem;overflow:hidden;text-overflow:ellipsis;'
+                            f'white-space:nowrap;">🔗 {_esc(dom)}</div>' if dom else ""
+                        )
+                        cur_badge = ""
                         if item.get("curriculum_id") and item["curriculum_id"] in _cur_title:
-                            st.caption(f"📋 {_cur_title[item['curriculum_id']]}")
+                            cur_badge = (
+                                '<div style="font-size:0.76rem;color:var(--ink-faint);'
+                                'margin-top:0.25rem;">📋 '
+                                f'{_esc(_cur_title[item["curriculum_id"]])}</div>'
+                            )
+
+                        meta_html = (
+                            f'<div style="flex-shrink:0;">{tag_block}{dom_html}{cur_badge}</div>'
+                        )
+                        st.markdown(
+                            # height 고정 → 같은 행 카드 높이 균일. 설명이 남는 공간 흡수.
+                            '<div style="display:flex;flex-direction:column;'
+                            'height:226px;overflow:hidden;">'
+                            '<div style="display:flex;align-items:flex-start;gap:0.4rem;'
+                            'margin-bottom:0.45rem;flex-shrink:0;">'
+                            f'<span style="font-size:1.25rem;line-height:1.2;">{emoji}</span>'
+                            '<span style="font-size:1.04rem;font-weight:700;color:var(--ink);'
+                            'line-height:1.3;display:-webkit-box;-webkit-line-clamp:2;'
+                            f'-webkit-box-orient:vertical;overflow:hidden;">{_esc(title)}</span></div>'
+                            f'{desc_html}{meta_html}'
+                            '</div>',
+                            unsafe_allow_html=True,
+                        )
+
                         if _is_admin():
                             link_c, del_c = st.columns([3, 1])
                         else:
                             link_c, del_c = st.container(), None
                         with link_c:
                             if item.get("url"):
-                                st.link_button("열기 ↗", item["url"], use_container_width=True)
+                                st.link_button("열기 ↗", item["url"],
+                                               use_container_width=True, type="primary")
                         if del_c is not None:
                             with del_c:
                                 if st.button("🗑", key=f"del_aux_{item['id']}",
@@ -1785,10 +2055,162 @@ def render_aux():
                                     delete_aux_program(item["id"])
                                     st.rerun()
 
+# ── 탭: AI 꿀팁 ────────────────────────────────────────────────
+# 카테고리별 아이콘 (카드/섹션 헤더 시각 구분용). 미정의 분류는 💡 폴백.
+_TIP_CAT_EMOJI = {
+    "Claude Code": "🤖",
+    "프롬프트": "✍️",
+    "워크플로우": "🔄",
+    "ChatGPT·제미나이": "💬",
+    "자동화·MCP": "⚙️",
+    "토큰 절약": "🪙",
+    "일반": "💡",
+}
+
+
+def _tip_emoji(cat: str) -> str:
+    return _TIP_CAT_EMOJI.get(cat, "💡")
+
+
+def render_tips():
+    _hero("AI 꿀팁",
+          "바로 따라 할 수 있는 AI 사용 노하우 모음입니다. "
+          "Claude Code에 \"[내용] 꿀팁 추가해줘\"라고 하면 채워집니다.",
+          "💡")
+
+    # ── 추가 폼 (관리자 전용) ──
+    if _is_admin():
+        with st.expander("➕ 꿀팁 추가", expanded=False):
+            with st.form("add_tip_form", clear_on_submit=True):
+                tc1, tc2 = st.columns(2)
+                with tc1:
+                    t_title = st.text_input("팁 제목", placeholder="예: /goal 로 목표 고정하기")
+                    t_cat = st.selectbox("분류", TIP_CATEGORIES)
+                with tc2:
+                    t_tags = st.text_input("태그(쉼표로 구분, 선택)", placeholder="프롬프트, 워크플로우")
+                    t_source = st.text_input("출처(선택)", placeholder="문서명·URL 등")
+                t_body = st.text_area("핵심 설명", placeholder="무엇을·왜 쓰는지 한두 줄로")
+                t_example = st.text_area("사용 예시(선택)", placeholder="실제 명령·프롬프트 예시")
+                if st.form_submit_button("꿀팁 추가", type="primary"):
+                    if not t_title.strip() or not t_body.strip():
+                        st.warning("제목과 핵심 설명은 필수입니다.")
+                    else:
+                        tags = [t.strip() for t in t_tags.split(",") if t.strip()]
+                        add_tip(t_title, t_body, example=t_example,
+                                category=t_cat, tags=tags, source=t_source)
+                        st.success(f"'{t_title}' 추가됨")
+                        st.rerun()
+        st.divider()
+
+    tips_all = load_tips_db().get("items", [])
+    if not tips_all:
+        st.info("아직 등록된 꿀팁이 없습니다. Claude Code에 "
+                "\"[내용] 꿀팁 추가해줘\"라고 말해보세요.")
+        return
+
+    tq_col, ts_col = st.columns([2, 1])
+    with tq_col:
+        tip_q = st.text_input("🔍 제목·내용·태그 검색", placeholder="키워드 입력", key="tip_q")
+    with ts_col:
+        tip_sort = st.selectbox("정렬", ["최신순", "오래된순", "제목순"], key="tip_sort")
+
+    q = tip_q.strip().lower()
+    tip_items = tips_all
+    if q:
+        tip_items = [
+            i for i in tip_items
+            if q in (i.get("title") or "").lower()
+            or q in (i.get("body") or "").lower()
+            or q in (i.get("example") or "").lower()
+            or any(q in (t or "").lower() for t in i.get("tags", []))
+        ]
+    tip_items = _sort_items(tip_items, tip_sort, "added_at")
+
+    st.caption(f"총 {len(tip_items)}개  ·  {tip_sort}")
+    if not tip_items:
+        st.info("조건에 맞는 꿀팁이 없습니다. 검색어를 바꿔보세요.")
+
+    present_cats = [c for c in TIP_CATEGORIES if any(i.get("category") == c for i in tip_items)]
+    extra_cats = sorted({i.get("category", "일반") for i in tip_items} - set(TIP_CATEGORIES))
+    for cat in present_cats + extra_cats:
+        cat_items = [i for i in tip_items if i.get("category", "일반") == cat]
+        if not cat_items:
+            continue
+        st.markdown(f"### {_tip_emoji(cat)} {cat}  ·  {len(cat_items)}개")
+        cols = st.columns(3)
+
+        def _esc(s: str) -> str:
+            return (s or "").replace("&", "&amp;").replace("<", "&lt;").replace(">", "&gt;")
+
+        for i, item in enumerate(cat_items):
+            with cols[i % 3]:
+                with st.container(border=True):
+                    title = item.get("title", "(제목 없음)")
+                    emoji = _tip_emoji(item.get("category", "일반"))
+                    body = (item.get("body") or "").strip()
+                    example = (item.get("example") or "").strip()
+                    source = (item.get("source") or "").strip()
+
+                    body_html = (
+                        '<div style="font-size:0.88rem;color:var(--ink-muted);'
+                        'line-height:1.55;flex:1;min-height:0;overflow:hidden;">'
+                        f'{_esc(body)}</div>'
+                    )
+                    example_html = ""
+                    if example:
+                        example_html = (
+                            '<div style="margin-top:0.5rem;background:var(--primary-soft);'
+                            'border-radius:8px;padding:0.5rem 0.7rem;font-size:0.78rem;'
+                            'color:var(--primary-active);'
+                            'font-family:ui-monospace,Menlo,Consolas,monospace;'
+                            'line-height:1.45;white-space:pre-wrap;word-break:break-word;'
+                            'max-height:84px;overflow:hidden;flex-shrink:0;">'
+                            f'{_esc(example)}</div>'
+                        )
+                    tag_html = "".join(
+                        '<span style="display:inline-block;background:var(--primary-soft);'
+                        'color:var(--primary);font-size:0.72rem;font-weight:600;'
+                        'padding:1px 8px;border-radius:9999px;margin:0 4px 4px 0;">'
+                        f'{_esc(t)}</span>'
+                        for t in item.get("tags", [])
+                    )
+                    tag_block = (
+                        f'<div style="margin-top:0.5rem;flex-shrink:0;">{tag_html}</div>'
+                        if tag_html else ""
+                    )
+                    source_html = (
+                        f'<div style="font-size:0.72rem;color:var(--ink-faint);'
+                        f'margin-top:0.3rem;flex-shrink:0;">📎 {_esc(source)}</div>'
+                        if source else ""
+                    )
+
+                    st.markdown(
+                        # height 고정 → 같은 행 카드 높이 균일. 핵심 설명이 남는 공간 흡수.
+                        '<div style="display:flex;flex-direction:column;'
+                        'height:262px;overflow:hidden;">'
+                        '<div style="display:flex;align-items:flex-start;gap:0.4rem;'
+                        'margin-bottom:0.45rem;flex-shrink:0;">'
+                        f'<span style="font-size:1.2rem;line-height:1.2;">{emoji}</span>'
+                        '<span style="font-size:1.0rem;font-weight:700;color:var(--ink);'
+                        'line-height:1.3;display:-webkit-box;-webkit-line-clamp:2;'
+                        f'-webkit-box-orient:vertical;overflow:hidden;">{_esc(title)}</span></div>'
+                        f'{body_html}{example_html}{tag_block}{source_html}'
+                        '</div>',
+                        unsafe_allow_html=True,
+                    )
+
+                    if _is_admin():
+                        if st.button("🗑 삭제", key=f"del_tip_{item['id']}",
+                                     use_container_width=True):
+                            delete_tip(item["id"])
+                            st.rerun()
+
+
 # ── 탭 6: 에이전트 ─────────────────────────────────────────────
 def render_agents():
-    st.markdown("## 🤖 에이전트 현황")
-    st.caption("Claude Code 세션이 팀장 역할을 하며 아래 에이전트들을 오케스트레이션합니다.")
+    _hero("에이전트 현황",
+          "Claude Code 세션이 팀장 역할을 하며 아래 에이전트들을 오케스트레이션합니다.",
+          "🤖")
 
     col_a, col_b = st.columns(2)
 
@@ -1831,37 +2253,34 @@ AI 기초 커리큘럼 만들어줘    → 커리큘럼 에이전트가 생성
 /커리큘럼                   → 커리큘럼 전용 슬래시 커맨드""", language="text")
 
 
-# ── 상단 그룹 네비 (그룹바 + 그룹별 하위탭) ────────────────────────
+# ── 좌측 세로 네비 메뉴 정의 (섹션 → 항목) ────────────────────────
 GROUPS = {
-    "📚 지식·학습": [
+    "지식·학습": [
         ("📚 지식 베이스", render_kb),
         ("📰 최근 뉴스", render_news),
         ("📋 커리큘럼", render_curriculum),
+        ("💡 AI 꿀팁", render_tips),
         ("🧰 보조 프로그램", render_aux),
     ],
-    "📥 수집": [
+    "수집": [
         ("📥 받은 문서", render_inbox),
         ("✏️ 직접 메모", render_memo),
         ("📡 소스", render_sources),
     ],
-    "⚙ 시스템": [
+    "시스템": [
         ("🤖 에이전트", render_agents),
     ],
 }
 
-# 공부 모드: 커리큘럼이 선택돼 있으면 전역 헤더·사이드바·그룹 네비를 모두
-# 건너뛰고 전용 화면(사이드바 세션 네비 + 본문 교재|슬라이드)으로 간다.
+# label → render_fn 평탄화 (본문 분기에 사용)
+PAGES = {label: fn for items in GROUPS.values() for label, fn in items}
+
+# 공부 모드: 커리큘럼이 선택돼 있으면 사이드바 네비를 건너뛰고
+# 전용 화면(사이드바 세션 네비 + 본문 교재|슬라이드)으로 간다.
 # 빠져나가기는 상세 화면의 "← 커리큘럼 목록" 버튼(cur_selected_id=None).
 if st.session_state.get("cur_selected_id"):
     render_curriculum()
 else:
-    render_global_chrome()
-    _group = st.segmented_control(
-        "메뉴", list(GROUPS), default="📚 지식·학습",
-        key="nav_group", label_visibility="collapsed",
-    )
-    _group = _group or "📚 지식·학습"  # 해제 시 None → 폴백
-    _subtabs = GROUPS[_group]
-    for _tab, (_label, _render_fn) in zip(st.tabs([t for t, _ in _subtabs]), _subtabs):
-        with _tab:
-            _render_fn()
+    _render_sidebar_nav()
+    _page = st.session_state.get("nav_page", "📚 지식 베이스")
+    PAGES.get(_page, render_kb)()

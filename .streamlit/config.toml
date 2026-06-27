@@ -8,14 +8,14 @@ headless = true
 [browser]
 gatherUsageStats = false
 
-# Notion 스타일 테마 — 따뜻한 종이색 캔버스 + 단 하나의 파랑 액센트
-# 세부(폰트 로드·둥글기·그림자·버튼/탭/카드)는 app.py의 _inject_theme_css()가 담당.
+# 보라색 SaaS 테마 — 연보라 캔버스 + 보라 액센트 (흰 카드)
+# 세부(폰트 로드·둥글기·그림자·버튼/탭/카드/네비)는 app.py의 _THEME_CSS가 담당.
 [theme]
 base = "light"
-primaryColor = "#0075de"             # 유일한 구조적 액센트 (CTA·링크·포커스)
-backgroundColor = "#f6f5f4"          # 따뜻한 종이색 캔버스 (canvas-soft)
+primaryColor = "#7C5CFC"             # 보라 액센트 (CTA·링크·포커스·활성 네비)
+backgroundColor = "#F5F3FF"          # 연보라 캔버스 (카드 뒤 배경)
 secondaryBackgroundColor = "#ffffff" # 카드·사이드바·위젯 표면 (흰색 figure/ground)
 textColor = "#1a1a1a"                # soft true-black (ink)
-linkColor = "#0075de"
-borderColor = "#e6e6e6"              # 헤어라인
+linkColor = "#7C5CFC"
+borderColor = "#ebe7fa"              # 헤어라인 (살짝 보라끼)
 font = "Pretendard, sans-serif"

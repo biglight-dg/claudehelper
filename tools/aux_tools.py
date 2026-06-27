@@ -4,27 +4,22 @@
 저장한다. 앱의 '보조 프로그램' 탭과 Claude Code(팀장)가 함께 사용한다.
 """
 
-import json
 from datetime import datetime
-from pathlib import Path
 
-AUX_DB_PATH = Path(__file__).parent.parent / "data" / "aux_programs.json"
+from tools import storage
+
+AUX_REL = "aux_programs.json"
 
 # 카테고리 표준값 (자유 입력도 허용하되 UI 기본 분류로 사용)
 CATEGORIES = ["크롬확장", "단축키", "웹툴", "데스크톱앱", "기타"]
 
 
 def load_aux_db() -> dict:
-    if not AUX_DB_PATH.exists():
-        return {"items": []}
-    with open(AUX_DB_PATH, encoding="utf-8") as f:
-        return json.load(f)
+    return storage.read_json(AUX_REL, {"items": []})
 
 
 def save_aux_db(db: dict) -> None:
-    AUX_DB_PATH.parent.mkdir(parents=True, exist_ok=True)
-    with open(AUX_DB_PATH, "w", encoding="utf-8") as f:
-        json.dump(db, f, ensure_ascii=False, indent=2)
+    storage.write_json(AUX_REL, db)
 
 
 def add_aux_program(title: str, description: str, url: str,

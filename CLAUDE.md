@@ -125,6 +125,17 @@ RSS 뉴스는 `inbox`(정리 대상 문서)와 분리된 **뉴스 스트림**(`d
    - 특정 과정과 관련되면 `curriculum_id`로 연결
 3. 앱 **보조 프로그램** 탭에서 분류별 카드로 관리 (열기 ↗ → 브라우저)
 
+### AI 꿀팁(사용 노하우) 등록
+
+1. Claude Code에 `"[내용] 꿀팁 추가해줘"` 요청 (또는 앱 탭의 추가 폼)
+2. 팀장이 `tips_tools.add_tip(title, body, example, category, tags, source)` 호출
+   - `category`: `Claude Code · 프롬프트 · 워크플로우 · ChatGPT·제미나이 · 자동화·MCP · 토큰 절약 · 일반`
+   - `example`은 바로 따라 할 명령·프롬프트(선택), `source`는 출처(선택)
+3. 앱 **💡 AI 꿀팁** 탭에서 분류별 카드로 관리 (제목 + 핵심 + 사용 예시 박스 + 태그)
+
+- 보조 프로그램(외부 도구 링크)과 분리된 **사용 노하우 컬렉션**(`data/ai_tips.json`). URL이 필요 없는 짧고 즉시 따라할 수 있는 팁 전용.
+- 같은 `title`이 있으면 새로 만들지 않고 갱신한다(`add_tip`이 자동 처리).
+
 ---
 
 ## Canva 슬라이드 생성 절차
@@ -236,7 +247,7 @@ Claude Code가 교육자 역할로 Canva MCP를 사용해 슬라이드를 생성
 
 | 경로 | 역할 |
 |------|------|
-| `app.py` | Streamlit UI (파일 업로드 + 지식 베이스 + 커리큘럼 뷰어) |
+| `app.py` | Streamlit UI (보라 테마·좌측 세로 네비; 지식 베이스·뉴스·커리큘럼·AI 꿀팁·보조 프로그램·소스·에이전트 탭). 본문 마크다운 렌더는 `_escape_tilde()`로 물결표(~) 취소선 깨짐 방지(범위는 엔대시 –) |
 | `agents/team_lead.py` | 팀장: 요청 라우팅, 결과 요약 |
 | `agents/educator.py` | 교육자: 문서/PPT 슬라이드 구조화 |
 | `agents/curator.py` | 큐레이터: DB 관리, 자동 태깅, 검색 |
@@ -249,8 +260,10 @@ Claude Code가 교육자 역할로 Canva MCP를 사용해 슬라이드를 생성
 | `tools/file_tools.py` | DB 로드/저장, 지식 파일 저장 |
 | `tools/curriculum_tools.py` | 커리큘럼 CRUD, 슬라이드 JSON 저장, 세션 참고자료(`add_session_reference`) |
 | `tools/aux_tools.py` | 보조 프로그램 카탈로그 CRUD (전역) |
+| `tools/tips_tools.py` | AI 꿀팁 카탈로그 CRUD (전역, `add_tip`/`delete_tip`/`list_tips`) |
 | `tools/pptx_maker.py` | python-pptx 기반 PPT 생성 (흑백, Pretendard) |
 | `data/aux_programs.json` | 보조 프로그램(확장·단축키·툴) 전역 카탈로그 |
+| `data/ai_tips.json` | AI 사용 꿀팁(사용 노하우) 전역 컬렉션 |
 | `data/sources.json` | 입력 소스 워치리스트(RSS·전문가 SNS) + 수집 이력(`seen`) |
 | `data/news.json` | 뉴스 스트림(수집된 RSS 항목) + 주간 브리핑 인덱스(`digests`) |
 | `data/inbox/` | 사용자가 넣은 원본 문서 |
@@ -288,6 +301,9 @@ Claude Code가 교육자 역할로 Canva MCP를 사용해 슬라이드를 생성
 
 "https://chromewebstore... 보조 프로그램에 추가해줘"
   → aux_tools.add_aux_program(title, description, url, category)
+
+"/goal 쓰는 법 꿀팁 추가해줘"
+  → tips_tools.add_tip(title, body, example, category, tags, source)
 ```
 
 ---

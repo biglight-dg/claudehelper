@@ -10,24 +10,22 @@ inbox(정리 대상 문서)와 분리된 '흘러가는 뉴스' 저장소다.
 RSS 워치리스트·파싱은 tools/sources.py를 재사용한다(새 API 키 없음).
 """
 import hashlib
-import json
 from datetime import datetime, timedelta
-from pathlib import Path
 
+from tools import storage
 from tools.sources import load_sources, fetch_rss
 from tools.file_tools import save_knowledge_file
 
-NEWS_FILE = Path(__file__).parent.parent / "data" / "news.json"
+NEWS_REL = "news.json"
 
 
 # ── 저장소 ────────────────────────────────────────────────────────
 
 def load_news() -> dict:
-    """data/news.json 로드. 없으면 빈 구조 반환."""
-    if not NEWS_FILE.exists():
-        return {"last_collected": "", "items": [], "digests": []}
-    with open(NEWS_FILE, encoding="utf-8") as f:
-        data = json.load(f)
+    """news.json 로드(로컬 또는 드라이브). 없으면 빈 구조 반환."""
+    data = storage.read_json(NEWS_REL, {})
+    if not isinstance(data, dict):
+        data = {}
     data.setdefault("last_collected", "")
     data.setdefault("items", [])
     data.setdefault("digests", [])
@@ -35,9 +33,7 @@ def load_news() -> dict:
 
 
 def save_news(data: dict) -> None:
-    NEWS_FILE.parent.mkdir(parents=True, exist_ok=True)
-    with open(NEWS_FILE, "w", encoding="utf-8") as f:
-        json.dump(data, f, ensure_ascii=False, indent=2)
+    storage.write_json(NEWS_REL, data)
 
 
 def _item_id(guid: str, link: str) -> str:

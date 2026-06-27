@@ -9,3 +9,6 @@ feedparser>=6.0.0
 # Google Sheets 동기화 (tools/gsheet_sync.py)
 gspread>=6.0.0
 google-auth>=2.0.0
+
+# Google Drive 저장소 백엔드 (tools/storage.py — 클라우드 배포 시 data를 드라이브에서 읽기)
+google-api-python-client>=2.0.0

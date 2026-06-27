@@ -10,7 +10,6 @@
 
 워치리스트 저장소: data/sources.json (data는 Google 공유 드라이브 정션 → 팀 공동 편집)
 """
-import json
 import re
 from datetime import datetime
 from pathlib import Path
@@ -19,20 +18,20 @@ from urllib.parse import urlparse
 import requests
 from bs4 import BeautifulSoup
 
+from tools import storage
 from tools.reader import save_to_inbox
 
-SOURCES_FILE = Path(__file__).parent.parent / "data" / "sources.json"
+SOURCES_REL = "sources.json"
 HEADERS = {"User-Agent": "Mozilla/5.0"}
 
 
 # ── 워치리스트 저장소 ─────────────────────────────────────────────
 
 def load_sources() -> dict:
-    """data/sources.json 로드. 없으면 빈 구조 반환."""
-    if not SOURCES_FILE.exists():
-        return {"rss": [], "experts": [], "seen": {}}
-    with open(SOURCES_FILE, encoding="utf-8") as f:
-        data = json.load(f)
+    """sources.json 로드(로컬 또는 드라이브). 없으면 빈 구조 반환."""
+    data = storage.read_json(SOURCES_REL, {})
+    if not isinstance(data, dict):
+        data = {}
     data.setdefault("rss", [])
     data.setdefault("experts", [])
     data.setdefault("seen", {})
@@ -40,9 +39,7 @@ def load_sources() -> dict:
 
 
 def save_sources(data: dict) -> None:
-    SOURCES_FILE.parent.mkdir(parents=True, exist_ok=True)
-    with open(SOURCES_FILE, "w", encoding="utf-8") as f:
-        json.dump(data, f, ensure_ascii=False, indent=2)
+    storage.write_json(SOURCES_REL, data)
 
 
 def add_rss(title: str, url: str, category: str = "") -> dict:

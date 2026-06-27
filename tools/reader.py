@@ -1,17 +1,18 @@
-import os
+import io
 import re
-from pathlib import Path
 import requests
 from bs4 import BeautifulSoup
 
-INBOX_DIR = Path("data/inbox")
+from tools import storage
+
+INBOX_REL = "inbox"
 
 
-def read_pdf(path: Path) -> str:
-    """PDF 파일에서 텍스트를 추출한다.
+def read_pdf(source) -> str:
+    """PDF에서 텍스트를 추출한다. source는 파일 경로 또는 bytes.
 
     텍스트 기반 PDF만 지원. 스캔 PDF(이미지 기반)는 OCR이 없어
-    텍스트를 추출할 수 없으며 빈 결과를 반환한다.
+    텍스트를 추출할 수 없으며 안내 메시지를 반환한다.
     """
     try:
         from pypdf import PdfReader
@@ -19,7 +20,8 @@ def read_pdf(path: Path) -> str:
         return "[PDF 읽기 실패: pypdf가 설치되지 않았습니다. pip install pypdf]"
 
     try:
-        reader = PdfReader(str(path))
+        src = io.BytesIO(source) if isinstance(source, (bytes, bytearray)) else str(source)
+        reader = PdfReader(src)
         pages = []
         for i, page in enumerate(reader.pages):
             text = page.extract_text() or ""
@@ -40,22 +42,21 @@ def read_pdf(path: Path) -> str:
 
 
 def read_inbox_files() -> list[dict]:
-    """data/inbox/ 폴더의 txt, md, pdf 파일을 모두 읽어 반환."""
+    """inbox 폴더의 txt, md, pdf 파일을 모두 읽어 반환(로컬 또는 드라이브)."""
     results = []
-    for path in sorted(INBOX_DIR.glob("*")):
-        suffix = path.suffix.lower()
-        if not path.is_file():
-            continue
+    for rel in storage.list_dir(INBOX_REL, (".txt", ".md", ".pdf")):
+        name = rel.rsplit("/", 1)[-1]
+        suffix = "." + name.rsplit(".", 1)[-1].lower() if "." in name else ""
         try:
             if suffix in (".txt", ".md"):
-                content = path.read_text(encoding="utf-8")
+                content = storage.read_text(rel) or ""
             elif suffix == ".pdf":
-                content = read_pdf(path)
+                content = read_pdf(storage.read_bytes(rel) or b"")
             else:
                 continue
-            results.append({"filename": path.name, "path": str(path), "content": content})
+            results.append({"filename": name, "path": rel, "content": content})
         except Exception as e:
-            results.append({"filename": path.name, "path": str(path), "content": f"[읽기 실패: {e}]"})
+            results.append({"filename": name, "path": rel, "content": f"[읽기 실패: {e}]"})
     return results
 
 
@@ -149,10 +150,10 @@ def fetch_youtube_meta(url: str) -> dict:
     return result
 
 
-def save_to_inbox(filename: str, content: str) -> Path:
-    """텍스트를 data/inbox/ 에 저장하고 경로를 반환."""
-    INBOX_DIR.mkdir(parents=True, exist_ok=True)
+def save_to_inbox(filename: str, content: str) -> str:
+    """텍스트를 inbox 에 저장하고 상대경로를 반환(로컬 또는 드라이브)."""
     safe = "".join(c if c.isalnum() or c in " ._-" else "_" for c in filename)
-    path = INBOX_DIR / (safe if safe.endswith((".txt", ".md")) else safe + ".txt")
-    path.write_text(content, encoding="utf-8")
-    return path
+    name = safe if safe.endswith((".txt", ".md")) else safe + ".txt"
+    relpath = f"{INBOX_REL}/{name}"
+    storage.write_text(relpath, content)
+    return relpath

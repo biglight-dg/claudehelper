@@ -1,7 +1,6 @@
 """큐레이터 에이전트 — 지식베이스 DB를 관리하고 자료를 분류/태깅한다."""
 
-import json
-from pathlib import Path
+from tools import storage
 
 SYSTEM_PROMPT = """당신은 AI 교육팀의 큐레이터입니다.
 
@@ -23,7 +22,7 @@ SYSTEM_PROMPT = """당신은 AI 교육팀의 큐레이터입니다.
 3. 생성일 최신순
 """
 
-DB_PATH = Path(__file__).parent.parent / "data" / "knowledge_db.json"
+DB_REL = "knowledge_db.json"
 
 # 키워드 → 태그 자동 매핑 규칙
 TAG_RULES: dict[str, list[str]] = {
@@ -51,15 +50,10 @@ TAG_RULES: dict[str, list[str]] = {
 
 class Curator:
     def load_db(self) -> dict:
-        if not DB_PATH.exists():
-            return {"items": []}
-        with open(DB_PATH, encoding="utf-8") as f:
-            return json.load(f)
+        return storage.read_json(DB_REL, {"items": []})
 
     def save_db(self, db: dict) -> None:
-        DB_PATH.parent.mkdir(parents=True, exist_ok=True)
-        with open(DB_PATH, "w", encoding="utf-8") as f:
-            json.dump(db, f, ensure_ascii=False, indent=2)
+        storage.write_json(DB_REL, db)
 
     def auto_tag(self, title: str, content: str) -> list[str]:
         """제목과 내용에서 태그를 자동 추출한다."""
