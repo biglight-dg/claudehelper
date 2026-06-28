@@ -1139,12 +1139,26 @@ def render_sources():
         if src["rss"]:
             st.caption(f"등록된 피드 {len(src['rss'])}개")
             for r in src["rss"]:
+                confirm_key = f"confirm_delrss_{r['url']}"
                 c1, c2 = st.columns([5, 1])
                 cat = f" · {r['category']}" if r.get("category") else ""
                 c1.markdown(f"**{r['title']}**{cat}  \n<small>{r['url']}</small>", unsafe_allow_html=True)
                 if _is_admin() and c2.button("삭제", key=f"delrss_{r['url']}"):
-                    remove_rss(r["url"])
+                    st.session_state[confirm_key] = True
                     st.rerun()
+                if st.session_state.get(confirm_key):
+                    # 삭제 2단계 확인
+                    st.warning(f"⚠️ '{r['title']}' 피드를 삭제할까요?")
+                    cy, cn = st.columns(2)
+                    if cy.button("삭제 확정", key=f"delyesrss_{r['url']}",
+                                 type="primary", use_container_width=True):
+                        remove_rss(r["url"])
+                        st.session_state.pop(confirm_key, None)
+                        st.rerun()
+                    if cn.button("취소", key=f"delnorss_{r['url']}",
+                                 use_container_width=True):
+                        st.session_state.pop(confirm_key, None)
+                        st.rerun()
         else:
             st.info("아직 등록된 RSS 피드가 없습니다.")
 
@@ -1195,9 +1209,23 @@ def render_sources():
                     if c2.button("RSS 연결", key=f"linkrss_{e['url']}"):
                         sync_expert_feeds()
                         st.rerun()
+                confirm_key = f"confirm_delex_{e['url']}"
                 if _is_admin() and c2.button("삭제", key=f"delex_{e['url']}"):
-                    remove_expert(e["url"])
+                    st.session_state[confirm_key] = True
                     st.rerun()
+                if st.session_state.get(confirm_key):
+                    # 삭제 2단계 확인
+                    st.warning(f"⚠️ '{e['name']}' 전문가를 삭제할까요?")
+                    cy, cn = st.columns(2)
+                    if cy.button("삭제 확정", key=f"delyesex_{e['url']}",
+                                 type="primary", use_container_width=True):
+                        remove_expert(e["url"])
+                        st.session_state.pop(confirm_key, None)
+                        st.rerun()
+                    if cn.button("취소", key=f"delnoex_{e['url']}",
+                                 use_container_width=True):
+                        st.session_state.pop(confirm_key, None)
+                        st.rerun()
         else:
             st.info("아직 등록된 전문가가 없습니다.")
 
