@@ -2202,10 +2202,25 @@ def render_tips():
                     )
 
                     if _is_admin():
-                        if st.button("🗑 삭제", key=f"del_tip_{item['id']}",
-                                     use_container_width=True):
-                            delete_tip(item["id"])
-                            st.rerun()
+                        # 삭제: 2단계 확인 (실수로 지우는 것 방지)
+                        confirm_key = f"confirm_del_tip_{item['id']}"
+                        if st.session_state.get(confirm_key):
+                            st.warning("⚠️ 이 꿀팁을 삭제할까요?")
+                            c_yes, c_no = st.columns(2)
+                            if c_yes.button("삭제 확정", key=f"delyes_tip_{item['id']}",
+                                            type="primary", use_container_width=True):
+                                delete_tip(item["id"])
+                                st.session_state.pop(confirm_key, None)
+                                st.rerun()
+                            if c_no.button("취소", key=f"delno_tip_{item['id']}",
+                                           use_container_width=True):
+                                st.session_state.pop(confirm_key, None)
+                                st.rerun()
+                        else:
+                            if st.button("🗑 삭제", key=f"del_tip_{item['id']}",
+                                         use_container_width=True):
+                                st.session_state[confirm_key] = True
+                                st.rerun()
 
 
 # ── 탭 6: 에이전트 ─────────────────────────────────────────────
