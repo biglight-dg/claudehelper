@@ -26,7 +26,7 @@ from agents.curator import Curator
 from agents.qa import QA
 
 st.set_page_config(
-    page_title="나만의 지식 베이스",
+    page_title="우리의 AI 기록",
     page_icon="📚",
     layout="wide",
 )
@@ -51,6 +51,7 @@ load_aux_db = st.cache_data(ttl=_CACHE_TTL, show_spinner=False)(load_aux_db)
 
 def _refresh_data() -> None:
     """캐싱해 둔 데이터를 모두 비우고 화면을 다시 그린다(즉시 최신 반영)."""
+    storage.clear_cache()  # 드라이브 백엔드 읽기 캐시까지 비운다
     st.cache_data.clear()
     st.rerun()
 
@@ -94,7 +95,7 @@ def _check_auth() -> None:
             _grant("guest")
             return
 
-    st.title("🔒 나만의 지식 베이스")
+    st.title("🔒 우리의 AI 기록")
     st.caption("공유받은 비밀번호를 입력하면 입장합니다.")
     pw = st.text_input("비밀번호", type="password")
     remember = st.checkbox("비밀번호 저장하기 (다음에 자동 입장)", value=True)
@@ -964,7 +965,7 @@ def _render_sidebar_nav() -> None:
     하단에 다크모드 토글·새로고침·명령어·역할/로그아웃을 둔다.
     """
     with st.sidebar:
-        st.markdown('<div class="nav-brand">📚 지식 베이스</div>', unsafe_allow_html=True)
+        st.markdown('<div class="nav-brand">📚 우리의 AI 기록</div>', unsafe_allow_html=True)
         current = st.session_state.get("nav_page", "📚 지식 베이스")
         for section, items in GROUPS.items():
             st.markdown(f'<div class="nav-section">{section}</div>', unsafe_allow_html=True)

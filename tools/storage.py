@@ -24,6 +24,7 @@ from __future__ import annotations
 
 import json
 import os
+import time
 from pathlib import Path
 
 # data/ 의 로컬 위치 (정션이면 정션을 따라간다)
@@ -162,6 +163,16 @@ def to_relpath(path) -> str:
     return p.lstrip("/")
 
 
+def clear_cache() -> None:
+    """백엔드의 읽기 캐시를 모두 비운다(관리자 '데이터 새로고침'용).
+
+    로컬 백엔드는 캐시가 없으므로 아무 일도 하지 않는다.
+    """
+    b = backend()
+    if hasattr(b, "clear_cache"):
+        b.clear_cache()
+
+
 def local_path(relpath: str) -> Path:
     """로컬 파일 경로가 꼭 필요한 코드용(예: PPTX 생성, 업로드 임시저장).
 
@@ -256,6 +267,12 @@ class _DriveBackend(_Backend):
         self._folder_cache: dict[str, str] = {"": self._root_id}
         self._file_cache: dict[str, str | None] = {}
         self._tmp = Path(os.environ.get("TEMP", "/tmp")) / "claudehelper_drive"
+        # 읽기 결과 캐시 — 클라우드에선 클릭마다 같은 파일을 드라이브에서
+        # 다시 내려받으면 느리다. 내용/목록을 잠깐 메모리에 보관한다.
+        # 쓰기/삭제 시 해당 항목을 즉시 무효화하므로 stale 위험은 없다.
+        self._cache_ttl = 120.0  # 초
+        self._content_cache: dict[str, tuple[float, bytes | None]] = {}
+        self._list_cache: dict[tuple[str, object], tuple[float, list[str]]] = {}
 
     # -- 구글 드라이브 서비스 (지연 로딩) --
     def _service(self):
@@ -334,8 +351,15 @@ class _DriveBackend(_Backend):
 
     # -- 읽기/쓰기 --
     def read_bytes(self, relpath):
+        key = relpath.strip("/")
+        now = time.time()
+        hit = self._content_cache.get(key)
+        if hit is not None and now - hit[0] < self._cache_ttl:
+            return hit[1]
+
         fid = self._file_id(relpath)
         if fid is None:
+            self._content_cache[key] = (now, None)
             return None
         from googleapiclient.http import MediaIoBaseDownload  # noqa: PLC0415
         import io  # noqa: PLC0415
@@ -346,7 +370,9 @@ class _DriveBackend(_Backend):
         done = False
         while not done:
             _, done = dl.next_chunk()
-        return buf.getvalue()
+        value = buf.getvalue()
+        self._content_cache[key] = (now, value)
+        return value
 
     def read_text(self, relpath, default=None):
         data = self.read_bytes(relpath)
@@ -371,14 +397,24 @@ class _DriveBackend(_Backend):
             new = self._files().create(body=meta, media_body=media, fields="id",
                                        supportsAllDrives=True).execute()
             self._file_cache[relpath.strip("/")] = new["id"]
+        # 방금 쓴 내용으로 캐시를 갱신하고, 폴더 목록 캐시는 비운다
+        # (새 파일이 생겼을 수 있으므로).
+        self._content_cache[relpath.strip("/")] = (time.time(), content)
+        self._list_cache.clear()
 
     def write_text(self, relpath, content: str):
         self.write_bytes(relpath, content.encode("utf-8"))
 
     def list_dir(self, relpath, suffixes):
         prefix = relpath.strip("/")
+        cache_key = (prefix, suffixes)
+        now = time.time()
+        hit = self._list_cache.get(cache_key)
+        if hit is not None and now - hit[0] < self._cache_ttl:
+            return hit[1]
         parent_id = self._folder_id(prefix)
         if parent_id is None:
+            self._list_cache[cache_key] = (now, [])
             return []
         out = []
         page = None
@@ -399,7 +435,9 @@ class _DriveBackend(_Backend):
             page = res.get("nextPageToken")
             if not page:
                 break
-        return sorted(out)
+        out = sorted(out)
+        self._list_cache[cache_key] = (now, out)
+        return out
 
     def exists(self, relpath):
         return self._file_id(relpath) is not None
@@ -414,6 +452,16 @@ class _DriveBackend(_Backend):
                 fileId=fid, body={"trashed": True}, supportsAllDrives=True,
             ).execute()
             self._file_cache[relpath.strip("/")] = None
+        # 캐시 무효화: 내용은 '없음'으로, 폴더 목록은 비운다.
+        self._content_cache[relpath.strip("/")] = (time.time(), None)
+        self._list_cache.clear()
+
+    def clear_cache(self):
+        """모든 읽기 캐시를 비운다(관리자 새로고침). 다음 읽기 때 드라이브에서 다시 받는다."""
+        self._content_cache.clear()
+        self._list_cache.clear()
+        self._file_cache.clear()
+        self._folder_cache = {"": self._root_id}
 
     def local_path(self, relpath):
         """드라이브 내용을 임시 파일로 내려받아 그 경로를 준다(읽기용)."""
